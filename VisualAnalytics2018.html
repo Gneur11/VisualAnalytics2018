@@ -68,7 +68,7 @@
 		text-decoration: none;
 		float:left
 		display: block;
-		font-size: 1.2vw;
+		font-size: 1vw;
 		transition-duration: 0.4s;
 		border:none;
 	}
@@ -80,7 +80,7 @@
 	
 	.mod {
 		width:90%;  /*pagina intera meno la barra a sinistra*/	
-		background-color:white;
+		background-color:#f1faff;
 		font-family: Tahoma, Geneva, sans-serif;
 		float:right;
 		height:90%;
@@ -95,37 +95,48 @@
 	}
 	
 	.mainClass {
+		margin-left:5px;
+		margin-top:5px;
+		margin-bottom:5px;
+		background-color:white;
 		width:60%;
 		height:100%;
 		float:left;
+		box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+		transition: all 0.3s cubic-bezier(.25,.8,.25,1);
 	}
 	
-	#aux1{
-		display:none;
+	.aux1{
+		margin-left:5px;
+		background-color:white;
 		width:40%;
 		height:50%;
 		float:right;
-		background-color:red;
+		box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+		transition: all 0.3s cubic-bezier(.25,.8,.25,1);
 		}
-	#aux2{
-		display:none;
+		
+	.aux2{
+		margin-left:5px;
+		box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+		transition: all 0.3s cubic-bezier(.25,.8,.25,1);
 		float:right;
 		width:40%;
 		height:50%;
 		background-color:green;
 	}
 	
-.tooltip {
- position: absolute;
-  text-align: center;
-  width: 80px;
-  padding: 2px;
-  font: 12px sans-serif;
-  background: lightsteelblue;
-  border: 0px;
-  border-radius: 8px;
-  pointer-events: none;
-}
+	.tooltip {
+	 position: absolute;
+	  text-align: center;
+	  width: 80px;
+	  padding: 2px;
+	  font: 12px sans-serif;
+	  background: lightsteelblue;
+	  border: 0px;
+	  border-radius: 8px;
+	  pointer-events: none;
+	}
 	</style> 
  
  </head>
@@ -146,6 +157,7 @@
 		<div id="view"> <text> Select filter... </text></div>
 
 	</div> 	
+	<div id="chart"> </div>
 	<script type="text/javascript">
 	//bar("a","month");
 	</script> 

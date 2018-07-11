@@ -5,10 +5,18 @@ function init(input){
 	if(!!el){
 		el.remove();
 	}
+	gate = document.getElementById("gatebar");
+	if(!!gate){
+		gate.remove();
+	}
+	e = document.getElementById("aux1");
+	if(!!e){
+		e.remove();
+	}
 	if(input == "Vehicle Type"){
 		vt();
 	} else if(input == "Time") {
-		time();
+		vtime();
 	} else if(input == "Vehicle ID"){
 		vID();
 	}
@@ -29,10 +37,6 @@ d3.selection.prototype.moveToBack = function() {
     };
 	
 function scatter(name,filter){
-	/* currentGraphs.b = "scatter";
-	currentGraphs.inputB = name;
-	currentGraphs.filterB = filter;
-	*/
 	d3.csv("Lekagul Sensor Data.csv").then(function(data){
 			var base = data;
 			var parseTime = d3.timeParse("%Y-%m-%d %H:%M:%S");
@@ -166,7 +170,7 @@ function scatter(name,filter){
 				  .attr("dy", "1em")
 				  .style("text-anchor", "middle")
 				  .text("Number of readings"); 
-			
+					
 			 svg.selectAll("circle")
 					.data(ordered)
 					.enter()
@@ -322,68 +326,86 @@ function bar(name,filter){
 				d.Timestamp = format(time);
 				})						
 		if(filter == "General"){
+			
 				ordered = d3.nest()
 					.key(function(d){return d['car-type'];})
 					.entries(base)
 	                .sort(function(a, b){ return d3.descending(a.values, b.values);});
-				auxBar(ordered,name);
+				auxBar(ordered,name,filter);
 		} else if (filter == "2016"){
 				temp = base.filter(function(d) {return d['Timestamp'] == "16";})
 				ordered = d3.nest()
 							.key(function(d){return d['car-type'];})
 							.entries(temp)
 							.sort(function(a, b){ return d3.descending(a.values, b.values);});
-				auxBar(ordered,name);
+				auxBar(ordered,name,filter);
 		} else if (filter == "2015"){
 				temp = base.filter(function(d) {return d['Timestamp'] == "15";})
 				ordered = d3.nest()
 							.key(function(d){return d['car-type'];})
 							.entries(temp)
 							.sort(function(a, b){ return d3.descending(a.values, b.values);});
-				auxBar(ordered,name);
-		} else if (filter == "Monthly"){
+				auxBar(ordered,name,filter);
+		} else if (filter == "Monthly"){        // MANCA
 				 ordered = d3.nest()
 							.key(function(d){return d['car-type'];})
 							.key(function(d) {return d['Timestamp'];})
 							.rollup(function (v) {return v.length;}) //va bene così
 							.entries(base)
 							//	.sort(function(a, b){ return d3.descending(a.values, b.values);});
+							multiLine(ordered,name);
 		}
-		console.log(ordered);
 	})
 
 }
 
 function onchange() {
+				gate = document.getElementById("gatebar");
+				if(!!gate){
+					gate.remove();
+				}
 			    s = document.getElementById("s")
 				selectValue= ""+s[s.selectedIndex].value;
 				bar("main",selectValue);
 			}
 
-function auxBar(data,name){
+function auxBar(data,name,filter){
+			var max = 0;
+			for(i=0;i<data.length;i++){
+				max = max + data[i].values.length;
+			}
+			arr = [];
+			for(j=0;j<data.length;j++){
+				obj = {"key":data[j].key,"percent":(data[j].values.length / max)*100};
+				arr.push(obj);
+			}
+			console.log(max,arr);
+		
 			var div = d3.select("#container").append("div").attr("id",name).attr("class","mainClass");
 			document.getElementById(name).style.width="60%";
-			document.getElementById(name).style.height="70%";
+			document.getElementById(name).style.height="60%";
+			document.getElementById(name).style.float="left";
 			
 			var filters = ["General", "2015", "2016","Monthly"];
-
+		
 			var s = d3.select('#'+name)
 						  .append('select')
 							.attr("id","s")
 							.attr('class','select')
 							.on('change',onchange)
-
+			
 			var options = s
-				  .selectAll('option')
+					.selectAll('option')
 					.data(filters)
 					.enter()
 					.append('option')
-						.text(function (d) { return d})		//mostra sempre general anche se hai altri filtri
-	
+					.text(function (d) { return d})		//mostra sempre general anche se hai altri filtri
+					.property("selected", function(d){return d == filter});
+					
 			var h = document.getElementById(name).clientHeight;
 			var w = document.getElementById(name).offsetWidth;
 			    w = w - margin.left - margin.right;
-				h = h - margin.top - margin.bottom -100;
+				h = h - margin.top - margin.bottom -70;
 			var i;
 			count = [];
 			keys = [];
@@ -399,7 +421,7 @@ function auxBar(data,name){
 				keys[i] = data[i].key;
 			}
 			//console.log(keys);
-			y = d3.scaleBand().rangeRound([0,h]);			
+			y = d3.scaleBand().rangeRound([0,h]).paddingInner(0.25);			
 			y.domain(keys);
 			var xAxis = d3.axisBottom(x);
 			var yAxis = d3.axisLeft(y);
@@ -444,14 +466,14 @@ function auxBar(data,name){
 					.enter()
 					.append("rect")
 					//.attr("width",function (d){return x(d.values.length);})
-					.attr("height", 30)
-					.attr("y", function(d,i){return y(d.key)+5;})
+					.attr("height", y.bandwidth())
+					.attr("y", function(d,i){return y(d.key)})
 					.attr("fill",function(d){if (d.key == "2P") {return "#EC9787";} else {return "steelblue";}})
 					.on("mouseover", function(d,i){
 								 canvas.append("text")
 									 .attr('id','tooltip')
 									 .text(d.values.length)
-									 .attr("y", y(d.key)+22)
+									 .attr("y", y(d.key)+ y.bandwidth()/2)
 									.attr("x", x(d.values.length) + 5)
 									.style("font-size","10px")
 								d3.select(this)
@@ -465,6 +487,10 @@ function auxBar(data,name){
 									.attr("stroke-width",0);	
 					})
 					.on("click", function(d){
+										gate = document.getElementById("gatebar");
+										if(!!gate){
+											gate.remove();
+										}
 									    s = document.getElementById("s")
 										selectValue= ""+s[s.selectedIndex].value;
 										gateBar(d.key,selectValue);
@@ -501,11 +527,17 @@ function auxBar(data,name){
 				.attr("x", 25)
 				.attr("y", 15)
 				.text(function(d) {return d})
-			
+		pie(arr,"aux1");
 }
-									
+	
 function gateBar(key,filter){
-	var margin = {top: 40, right: 10, bottom: 150, left: 80};
+	var margin = {top: 40, right: 10, bottom: 120, left: 80};
+	
+	var div = d3.select("#container").append("div").attr("id","gatebar").attr("class","aux1");
+			document.getElementById("gatebar").style.width="60%";
+			document.getElementById("gatebar").style.height="38%";
+			document.getElementById("gatebar").style.float="left";
+			
 	d3.csv("Lekagul Sensor Data.csv").then(function(data){ 
 			var filtered; 
 			var base = [];
@@ -542,8 +574,8 @@ function gateBar(key,filter){
 				f = filtered[0].values;
 			}
 			f.sort(function(a, b){ return d3.descending(a.values, b.values);});		
-			var h = document.getElementById("main").clientHeight;
-			var w = document.getElementById("main").offsetWidth;
+			var h = document.getElementById("gatebar").clientHeight;
+			var w = document.getElementById("gatebar").offsetWidth;
 					w = w - margin.left - margin.right;
 					h = h - margin.top - margin.bottom;
 			var i;		
@@ -557,12 +589,11 @@ function gateBar(key,filter){
 				count[i] = filtered[0].values[i].values.length;
 			}
 
-			var x = d3.scaleLinear().domain([0, d3.max(count)]).range([0, w-20]),
-			y = d3.scalePoint().domain(keys).rangeRound([0,h]);
+			var y = d3.scaleLinear().domain([0,d3.max(count)]).range([h,0]),
+			x = d3.scaleBand().domain(keys).rangeRound([0,w]).paddingInner(0.2);
 			var xAxis = d3.axisBottom(x);
 			var yAxis = d3.axisLeft(y);
-			d3.select("#svgmain").remove();
-			var canvas = d3.select("#main").append("svg")       //occhio che hai dato nomi non portabili
+			var canvas = d3.select("#gatebar").append("svg")       //occhio che hai dato nomi non portabili
 					.attr("width", w + margin.left + margin.right)
 					.attr("height", h + margin.top + margin.bottom)
 					.attr("id", "svgmain")
@@ -571,15 +602,22 @@ function gateBar(key,filter){
 	
 				canvas.append("g")
 				  .attr("transform", "translate(0," + h + ")")
-				  .call(d3.axisBottom(x));
+				  .call(d3.axisBottom(x))
+				  .selectAll("text")
+				  .attr("transform","rotate(75)")
+				  .attr("y", 0)
+				  .attr("x", 9)
+				  .attr("dy", ".35em")
+				  .style("text-anchor", "start")
+				  .style("font-size","9px");
 
 			  // text label for the x axis
 				canvas.append("text")             
 				  .attr("transform",
 						"translate(" + (w/2) + " ," + 
-									   (h + margin.top + 20) + ")")
+									   (h + margin.top + 40) + ")")
 				  .style("text-anchor", "middle")
-				  .text("Number of readings");
+				  .text("Sensor");
 			
 			 // Add the y Axis
 				canvas.append("g")
@@ -593,15 +631,16 @@ function gateBar(key,filter){
 				  .attr("x",0 - (h / 2))
 				  .attr("dy", "1em")
 				  .style("text-anchor", "middle")
-				  .text("Sensor");      
+				  .text("Number of readings");      
 			
+			console.log(f);
 			canvas.selectAll("rect")
 					.data(f)
 					.enter()
 					.append("rect")
-					//.attr("width",function (d){return x(d.values.length);})
-					.attr("height", function(){return 5;})
-					.attr("y", function(d,i){return y(d.key);})
+					.attr("width",x.bandwidth())
+					.attr("x", function(d,i){return x(d.key);})
+					.attr("y", function(d) {return y(d.values.length)})
 					.attr("fill", function(d){if ((d.key).indexOf("ranger") > -1) {
 												return "#a6cee3";   //ranger azzurro 
 											} else if ((d.key).indexOf("general-gate") > -1) {
@@ -615,12 +654,13 @@ function gateBar(key,filter){
 											}})
 					.transition()
 					.duration(250)
-					.attr("width", function(d, i) {
-						return x(d.values.length);
+					.attr("height", function(d, i) {
+						console.log(y(d.values.length));
+						return h - y(d.values.length);
 					})
 					
 
-			var legendRect = 18;
+			var legendRect = 10;
 			var legendSpacing = 4;
 			
 			legend = canvas.selectAll('.legend')                     // NEW
@@ -629,16 +669,16 @@ function gateBar(key,filter){
 			  .append('g')                                            // NEW
 			  .attr('class', 'legend')                    
 			  .attr("transform", function(d,i){
-				  var height = legendRect + legendSpacing;
-				  var offset = height * 2 / 2;
-				  var horz = -2 * legendRect;
-				  var vert = i * height -offset;
-				  return "translate("+ (w - 130)+","+ ((h -100) - vert) +")";
+				  var width = legendRect + legendSpacing;
+				  var offset =  width * 3 / 2 +100;
+				  var horz = i * (legendRect + offset) ;
+				  var vert = -2 * legendRect - 70;
+				  return "translate("+ (w - (w/4) - horz)+","+ (h - vert) +")";
 			  });
 			  
 			 legend.append("rect")
-				.attr("width",20)
-				.attr("height",20)
+				.attr("width",10)
+				.attr("height",10)
 				.style("fill",function(d,i){if (d=="Ranger Camps") {return "#a6cee3";}
 									else if (d == "General gates") {return "#1f78b4";}
 									else if (d == "Camping sites") {return "#33a02c";}
@@ -647,11 +687,251 @@ function gateBar(key,filter){
 									})
 				
 			legend.append("text")
-				.attr("x", 25)
-				.attr("y", 15)
+				.attr("x", 20)
+				.attr("y", 10)
+				.attr("font-size","10px")
 				.text(function(d) {return d})
 	});	
 }
+
+function multiLine(data,name) {
+			var div = d3.select("#container").append("div").attr("id",name).attr("class","mainClass");
+			document.getElementById(name).style.width="60%";
+			document.getElementById(name).style.height="60%";
+			document.getElementById(name).style.float="left";
+			var h = document.getElementById(name).clientHeight;
+			var w = document.getElementById(name).offsetWidth;
+			    w = w - margin.left - margin.right;
+				h = h - margin.top - margin.bottom- 100;
+			
+			var //x = d3.scaleTime().range([0,w]),
+		    x = d3.scalePoint().range([0, w]),
+			y = d3.scaleLinear().domain([19000,0]).range([0,h]);
+			
+			var xAxis = d3.axisBottom(x).tickFormat(d3.timeFormat("%b"));
+			var yAxis = d3.axisLeft(y);			
+			
+			
+			var z = d3.scaleOrdinal(d3.schemeCategory10);
+			z.domain(data, function(d){return d.key;}); //mappa per ogni tipo di veicolo il coloro 
+			var cols = [];
+			var months = [];
+			var rows= data.length;
+			for (var i  = 0; i < rows; i++){
+			     cols[i] = []
+					months[i] = [];}
+			var i;
+			for(i=0;i<data.length;i++){
+				var j;
+				for(j=0;j<data[i].values.length;j++){
+					cols[i][j]=(data[i].values[j].value);
+				}
+			}
+			
+			//console.log(cols);		
+	
+			
+			var da0 = [];
+				for (var j=0; j< data[0].values.length; j++){
+					var linedata = {"type": data[0].key,"month": data[0].values[j].key, "value":+data[0].values[j].value}
+					da0.push(linedata);
+					months[j] = data[0].values[j].key;
+				}
+			x.domain(months);
+			var da1 = [];
+				for (var j=0; j<data[1].values.length; j++){
+					var linedata = {"type": data[1].key,"month": data[1].values[j].key, "value":+data[1].values[j].value}
+					da1.push(linedata);
+				}
+			var da2 = [];
+				for (var j=0; j<data[2].values.length; j++){
+					var linedata = {"type": data[2].key,"month": data[2].values[j].key, "value":+data[2].values[j].value}
+					da2.push(linedata);
+				}
+			var da3 = [];
+				for (var j=0; j<data[3].values.length; j++){
+					var linedata = {"type": data[3].key,"month": data[3].values[j].key, "value":+data[3].values[j].value}
+					da3.push(linedata);
+				}
+			var da4 = [];
+				for (var j=0; j<data[1].values.length; j++){
+					var linedata = {"type": data[4].key,"month": data[4].values[j].key, "value":+data[4].values[j].value}
+					da4.push(linedata);
+				}
+			var da5 = [];
+				for (var j=0; j<data[1].values.length; j++){
+					var linedata = {"type": data[5].key,"month": data[5].values[j].key, "value":+data[5].values[j].value}
+					da5.push(linedata);
+				}
+			var da6 = [];
+				for (var j=0; j<data[1].values.length; j++){
+					var linedata = {"type": data[6].key,"month": data[6].values[j].key, "value":+data[6].values[j].value}
+					da6.push(linedata);
+				}			
+			
+			console.log(data);
+			var svg = d3.select("#"+name).append("svg")
+					.attr("id", "svg"+name)
+					.attr("width", w + margin.left + margin.right)
+					.attr("height", h + margin.top + margin.bottom)
+					.append("g")
+					.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+				
+			svg.append("text")             
+				  .attr("transform",
+						"translate(" + (w/2) + " ," + 
+									   (h + margin.top) + ")")
+				  .style("text-anchor", "middle")
+				  .text("Month");
+			
+			svg.append("text")
+				.attr("transform", "rotate(-90)")
+				  .attr("y", 0 - margin.left)
+				  .attr("x",0 - (h / 2))
+				  .attr("dy", "1em")
+				  .style("text-anchor", "middle")
+				  .text("Number of readings");     
+			
+			svg.append("g")
+				  .attr("transform", "translate(0," + h + ")")
+				  .call(d3.axisBottom(x));
+			
+			svg.append("g")
+			  .style("font","8px times")
+			  .call(d3.axisLeft(y))
+			var base = data;
+			var circlesGr = svg.selectAll(".circleGroups")
+								.data(base) 
+								.enter()
+								.append("g")
+								.attr("fill",function(d){return z(d.key)})
+
+			var circles = circlesGr.selectAll(".circles")
+									.data(function(d){return d.values})
+									.enter()
+									.append("circle")
+									
+				circles.attr("r",2)
+						.attr("cx",function(d){return x(d.key)})
+						.attr("cy",function(d){return y(d.value)})
+			
+			var line = d3.line()
+						.x(function(d,i){return x(d.key)})
+						.y(function(d,i) {return y(d.value);})		
+			
+			var pathsGroup = svg.selectAll(".pathsGroup")
+								.data(base)
+								.enter()
+								.append("g")
+								.attr("fill","none")
+								.attr("stroke",function(d){console.log(d);return z(d.key)})
+						
+			var paths = pathsGroup.selectAll(".paths")
+									.data(function(d){return [d.values]})
+									.enter()
+									.append("path")
+									.attr("d",line)
+									.attr("class","line")
+									.attr("stroke-width",2)
+									.attr("id",function(d,i){return "line";})
+														
+							/*		o = d3.selectAll(".line")
+									o.each(function(d,i){
+										var totalLength = d3.select("#line").getTotalLength;
+										console.log(totalLength);
+										d3.selectAll("#line"+i).attr("stroke-dasharray", totalLength + " " + totalLength)
+																  .attr("stroke-dashoffset", totalLength)
+																  .transition()
+																  .duration(2000)
+									})	
+			/*	
+				d3.select.attr("stroke-dasharray",function(d){totalLength = x(d.length); return(totalLength + " " + totalLength)})
+						  .attr("stroke-dashoffset", 0)
+						  .transition()
+							.duration(2000)
+							.attr("stroke-dashoffset",totalLength)
+						*/	
+			var legendRect = 18;
+			var legendSpacing = 4;
+		
+			legend = svg.selectAll('.legend')                     
+			  .data([da0,da1,da2,da3,da4,da5,da6])                                
+			  .enter()                                                
+			  .append('g')                                            
+			  .attr('class', 'legend')                    
+			  .attr("transform", function(d,i){
+				  var height = legendRect + legendSpacing;
+				  var offset = height * 2 / 2;
+				  var horz = -2 * legendRect;
+				  var vert = i * height -offset;
+				  return "translate("+ (w - 80)+","+ vert +")";
+			  });
+			  
+			 legend.append("rect")
+				.attr("width",20)
+				.attr("height",20)
+				.style("fill", function(d){return z(d[0].type)})
+				
+			legend.append("text")
+				.attr("x", 25)
+				.attr("y", 15)
+				.text(function(d) {return d[0].type})
+  }							
+
+//prende in input array contenenti chiavi e percentuali
+function pie(array,name){
+	var div = d3.select("#container").append("div").attr("id",name).attr("class","aux1");
+				document.getElementById(name).style.width="39%";   // cerca di portare sta cosa nella classe nell'html, qua devi ripeterli ogni volta
+				document.getElementById(name).style.height="49";
+				document.getElementById(name).style.float="right";
+				document.getElementById(name).style.marginTop="5px";
+				document.getElementById(name).style.marginRight="5px";
+
+	var h = document.getElementById(name).clientHeight;
+	var w = document.getElementById(name).offsetWidth;
+	    w = w - margin.left - margin.right;
+		h = h - margin.top - margin.bottom;		
+    radius = Math.min(w, h) / 2;
+	console.log(array);
+keys = ["1","2","3","2P","4","5","6"];
+var arc = d3.arc()
+    .outerRadius(radius-10)
+    .innerRadius(radius/2);
+	
+var c10 = d3.scaleOrdinal(d3.schemeCategory10).domain(keys);
+
+//metti label, interattività, transitions, legalo al filtro del bar chart (mostra le cose del filtro 2015... magari cerca di tenere il grafico e modificare i settori
+
+/*var labelArc = d3.arc()
+    .outerRadius(radius - 40)
+    .innerRadius(radius - 40);
+*/
+var pie = d3.pie()
+    .sort(null)
+    .value(function(d) { return d.percent; });
+
+var svg = d3.select("#"+name).append("svg")
+			.attr("width", w)
+			.attr("height", h)
+			.append("g")
+			.attr("transform", "translate(" + w / 2 + "," + h/2 + ")");
+
+  var g = svg.selectAll(".arc")
+			.data(pie(array))
+			.enter()
+			.append("g")
+			.attr("class", "arc");
+	
+  g.append("path")
+      .attr("d", arc)
+      .style("fill", function (d){return c10(d.data.key)})
+
+/*  g.append("text")
+      .attr("transform", function(d) { return "translate(" + labelArc.centroid(d) + ")"; })
+      .attr("dy", ".35em")   roba semi inutile
+      .text(function(d) { return d.key; });
+*/ 
+	  }
 
 function vt(){
 	main = document.getElementById("main");
@@ -659,9 +939,122 @@ function vt(){
 		main.remove();
 	}
 	bar("main","General");
-	console.log("mostra id");
+	}
+
+function vtime(){
+	main = document.getElementById("main");
+	if(!!main){
+		main.remove();
+	}
+	timeroni("main");
 }
 
-function time(){
-	console.log("mostra time");}
+function timeroni(name){
+	d3.csv("Lekagul Sensor Data.csv").then(function(data){
+			var base = data;
+			var ordered = d3.nest()
+					.key(function(d){return d['Timestamp'];})
+					.entries(data);
+		///	console.log(ordered);
+			
+			var date = "2015-05-01 08:32:09"
+			var parseTime = d3.timeParse("%Y-%m-%d %H:%M:%S");
+			var c = parseTime(date);
+			
+			var format = d3.timeFormat("%y-%m-%d");
+	
+			ordered.forEach(function(d,i) {   
+				var time = parseTime(d.key);
+				d.key = format(time);
+				})
+			//console.log(ordered);
+			
+			var ordered1 = d3.nest()
+						.key(function(d){return d['key'];})
+						.entries(ordered);
+			//console.log(ordered1);
+			var div = d3.select("#container").append("div").attr("id",name).attr("class","mainClass");
+			document.getElementById(name).style.width="60%";
+			document.getElementById(name).style.height="70%";
+			var h = document.getElementById(name).clientHeight;
+			var w = document.getElementById(name).offsetWidth;
+			    w = w - margin.left - margin.right;
+				h = h - margin.top - margin.bottom -100;
+
+			var max = d3.max(ordered1,function(d){return d.values.length;});
+			//console.log(max);
+			
+			var x = d3.scaleLinear().range([0, w-margin.right]),
+			y = d3.scaleLinear().range([h,0]);
+			
+			
+			//console.log(d3.extent(ordered1, function(d) {return d.key}));
+			//console.log(d3.extent(ordered1, function(d) {return d.values.length}));
+			
+			x.domain([0,ordered1.length]);
+			y.domain(d3.extent(ordered1, function(d) {return d.values.length;}));
+			
+			
+			var xAxis = d3.axisBottom(x);
+			var yAxis = d3.axisLeft(y);
+			
+			//console.log(x(5));
+			
+			var line = d3.line()
+						.x(function(d,i) {return x(i);})
+						.y(function(d) {return y(d.values.length);})
+						;//.curve(d3.curveCardinal);
+			
+			
+			var svg = d3.select("#"+name).append("svg")
+					.attr("id", "svg"+name)
+					.attr("width", w + margin.left + margin.right)
+					.attr("height", h + margin.top + margin.bottom)
+					.append("g")
+					.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+					
+			svg.append("g")
+				  .attr("transform", "translate(0," + h + ")")
+				  .call(d3.axisBottom(x));
+
+			  // text label for the x axis
+			svg.append("text")             
+				  .attr("transform",
+						"translate(" + (w/2) + " ," + 
+									   (h + margin.top) + ")")
+				  .style("text-anchor", "middle")
+				  .text("Day");
+			
+			 // Add the y Axis
+			svg.append("g")
+				.call(d3.axisLeft(y));
+	
+			// text label for the y axis
+			svg.append("text")
+				.attr("transform", "rotate(-90)")
+				  .attr("y", 0 - margin.left)
+				  .attr("x",0 - (h / 2))
+				  .attr("dy", "1em")
+				  .style("text-anchor", "middle")
+				  .text("Traffic (# of readings)");
+			
+		var path = svg.append("path")
+				.datum(ordered1)
+				.attr("fill","none")
+				.attr("stroke", "steelblue")
+				.attr("class","line")
+				.attr("stroke-width",1.5)
+				.attr("d",line);
+		
+		var totalLength = path.node().getTotalLength();
+			
+			  path.attr("stroke-dasharray", totalLength + " " + totalLength)
+				  .attr("stroke-dashoffset", totalLength)
+				  .transition()
+					.duration(2000)
+					.attr("stroke-dashoffset", 0);
+
+	});
+};
+
 
