@@ -1,5 +1,4 @@
 var margin = {top: 40, right: 20, bottom: 50, left: 60};
-
 function init(input){
 	el = document.getElementById("view");
 	if(!!el){
@@ -12,6 +11,10 @@ function init(input){
 	e = document.getElementById("aux1");
 	if(!!e){
 		e.remove();
+	}
+	e2 = document.getElementById("aux2");
+	if(!!e2){
+		e2.remove();
 	}
 	if(input == "Vehicle Type"){
 		vt();
@@ -36,7 +39,7 @@ d3.selection.prototype.moveToBack = function() {
         });
     };
 	
-function scatter(name,filter){
+function scatter(name,filter){   //gauge chart per mostrare la percentuale di tutti quelli che hai? giusto per non fare pie chart
 	d3.csv("Lekagul Sensor Data.csv").then(function(data){
 			var base = data;
 			var parseTime = d3.timeParse("%Y-%m-%d %H:%M:%S");
@@ -364,10 +367,89 @@ function onchange() {
 				if(!!gate){
 					gate.remove();
 				}
+				pie = document.getElementById("aux1");
+				if(!!pie){
+					pie.remove();
+				}
+				pie1 = document.getElementById("aux2");
+				if(!!pie1){
+					pie1.remove();
+				}
 			    s = document.getElementById("s")
 				selectValue= ""+s[s.selectedIndex].value;
 				bar("main",selectValue);
 			}
+			
+function pieroni(array,name,title){ // se applichi anche al gatebar? cioè fai vedere tipo il numero di visite per gate/ranger stop in generale--> le entrate saranno più frequentate ecc ecc
+	var div = d3.select("#container").append("div").attr("id",name).attr("class",name);
+				document.getElementById(name).style.float="right";
+		
+	console.log(array);
+	var h = document.getElementById(name).clientHeight;
+	var w = document.getElementById(name).offsetWidth;
+	    w = w -margin.right;
+		h = h -margin.bottom ;		
+    radius = Math.min(w, h) / 2;
+	console.log(array);
+	
+	var svg = d3.select("#"+name).append("svg")
+			.attr("width", w)
+			.attr("height", h)
+			.attr("id","svg"+name)
+			.append("g")
+			.attr("transform", "translate(" + w / 2 + "," + h/2 + ")");
+		
+		cols = [];
+		for(i=0;i<arr.length;i++){
+			a = [arr[i].key,arr[i].percent];
+			cols.push(a);
+		}
+		var chart = bb.generate({
+	  data: {
+		color: function(color,d){if(name=="aux2")
+									{if(d == "ranger-stops"){
+													return "#a6cee3";
+												     } else if(d == "general-gates") {
+														return "#1f78b4";
+													 } else if(d == "entrances"){
+														return "#b2df8a";
+													 } else if(d == "campings"){
+														return "#33a02c";
+													 } else {
+														return "#fb9a99";
+									}}
+								 else {
+									return color;
+									}
+								},
+		columns: cols,
+		type: "donut",
+		onover: function(d, i) {
+		console.log("onover", d, i);
+	   },
+		onout: function(d, i) {
+		console.log("onout", d, i);
+	   }
+	  },
+	  
+	  donut: {
+		title: title,
+	  },
+	  tooltip:{
+		show: true
+	  },
+	  bindto: "#svg"+name
+	});
+/*	chart.load({
+		columns: [      
+			["setosa", 0.2, 0.2, 0.2, 0.2, 0.2, 0.4, 0.3, 0.2, 0.2, 0.1, 0.2, 0.2, 0.1, 0.1, 0.2, 0.4, 0.4, 0.3, 0.3, 0.3, 0.2, 0.4, 0.2, 0.5, 0.2, 0.2, 0.4, 0.2, 0.2, 0.2, 0.2, 0.4, 0.1, 0.2, 0.2, 0.2, 0.2, 0.1, 0.2, 0.2, 0.3, 0.3, 0.2, 0.6, 0.4, 0.3, 0.2, 0.2, 0.2, 0.2],
+			["versicolor", 1.4, 1.5, 1.5, 1.3, 1.5, 1.3, 1.6, 1.0, 1.3, 1.4, 1.0, 1.5, 1.0, 1.4, 1.3, 1.4, 1.5, 1.0, 1.5, 1.1, 1.8, 1.3, 1.5, 1.2, 1.3, 1.4, 1.4, 1.7, 1.5, 1.0, 1.1, 1.0, 1.2, 1.6, 1.5, 1.6, 1.5, 1.3, 1.3, 1.3, 1.2, 1.4, 1.2, 1.0, 1.3, 1.2, 1.3, 1.3, 1.1, 1.3],
+			["virginica", 2.5, 1.9, 2.1, 1.8, 2.2, 2.1, 1.7, 1.8, 1.8, 2.5, 2.0, 1.9, 2.1, 2.0, 2.4, 2.3, 1.8, 2.2, 2.3, 1.5, 2.3, 2.0, 2.0, 1.8, 2.1, 1.8, 1.8, 1.8, 2.1, 1.6, 1.9, 2.0, 2.2, 1.5, 1.4, 2.3, 2.4, 1.8, 1.8, 2.1, 2.4, 2.3, 1.9, 2.3, 2.5, 2.3, 1.9, 2.0, 2.3, 1.8],
+		]
+	});
+	*/
+
+  }
 
 function auxBar(data,name,filter){
 			var max = 0;
@@ -376,14 +458,13 @@ function auxBar(data,name,filter){
 			}
 			arr = [];
 			for(j=0;j<data.length;j++){
-				obj = {"key":data[j].key,"percent":(data[j].values.length / max)*100};
+				obj = {"key":data[j].key,"percent":data[j].values.length};
 				arr.push(obj);
 			}
 			console.log(max,arr);
-		
+			pieroni(arr,"aux1","Traffic per \n vehicle type");
+			
 			var div = d3.select("#container").append("div").attr("id",name).attr("class","mainClass");
-			document.getElementById(name).style.width="60%";
-			document.getElementById(name).style.height="60%";
 			document.getElementById(name).style.float="left";
 			
 			var filters = ["General", "2015", "2016","Monthly"];
@@ -405,7 +486,7 @@ function auxBar(data,name,filter){
 			var h = document.getElementById(name).clientHeight;
 			var w = document.getElementById(name).offsetWidth;
 			    w = w - margin.left - margin.right;
-				h = h - margin.top - margin.bottom -70;
+				h = h - margin.top - margin.bottom -40;
 			var i;
 			count = [];
 			keys = [];
@@ -491,6 +572,10 @@ function auxBar(data,name,filter){
 										if(!!gate){
 											gate.remove();
 										}
+										pie = document.getElementById("aux2");
+										if(!!pie){
+											pie.remove();
+										}
 									    s = document.getElementById("s")
 										selectValue= ""+s[s.selectedIndex].value;
 										gateBar(d.key,selectValue);
@@ -527,16 +612,12 @@ function auxBar(data,name,filter){
 				.attr("x", 25)
 				.attr("y", 15)
 				.text(function(d) {return d})
-		pie(arr,"aux1");
 }
 	
 function gateBar(key,filter){
-	var margin = {top: 40, right: 10, bottom: 120, left: 80};
+	var margin = {top: 40, right: 20, bottom: 120, left: 80};
 	
-	var div = d3.select("#container").append("div").attr("id","gatebar").attr("class","aux1");
-			document.getElementById("gatebar").style.width="60%";
-			document.getElementById("gatebar").style.height="38%";
-			document.getElementById("gatebar").style.float="left";
+	var div = d3.select("#container").append("div").attr("id","gatebar").attr("class","gatebar");
 			
 	d3.csv("Lekagul Sensor Data.csv").then(function(data){ 
 			var filtered; 
@@ -691,6 +772,28 @@ function gateBar(key,filter){
 				.attr("y", 10)
 				.attr("font-size","10px")
 				.text(function(d) {return d})
+			
+			//modifica pie chart esistente
+			rangerStop = 0;
+			generalGate = 0;
+			entrance = 0;
+			gate = 0;
+			camping = 0;
+			for(i=0;i<f.length;i++){
+				if ((f[i].key).indexOf("ranger") > -1) {
+											rangerStop = rangerStop + f[i].values.length;
+											} else if ((f[i].key).indexOf("general-gate") > -1) {
+												generalGate = generalGate + f[i].values.length;
+											} else if ((f[i].key).indexOf("entrance") > -1){
+												entrance = entrance + f[i].values.length;
+											} else if ((f[i].key).indexOf("camping") > -1){
+												camping = camping + f[i].values.length;
+											} else { 
+												gate = gate + f[i].values.length;
+											}
+				}
+			arr = [{"key":"ranger-stops","percent":rangerStop},{"key":"general-gates","percent":generalGate},{"key":"entrances","percent":entrance},{"key":"gates","percent":gate},{"key":"campings","percent":camping}]
+			pieroni(arr,"aux2","Traffic per \n type of sensor");
 	});	
 }
 
@@ -877,61 +980,6 @@ function multiLine(data,name) {
 				.attr("y", 15)
 				.text(function(d) {return d[0].type})
   }							
-
-//prende in input array contenenti chiavi e percentuali
-function pie(array,name){
-	var div = d3.select("#container").append("div").attr("id",name).attr("class","aux1");
-				document.getElementById(name).style.width="39%";   // cerca di portare sta cosa nella classe nell'html, qua devi ripeterli ogni volta
-				document.getElementById(name).style.height="49";
-				document.getElementById(name).style.float="right";
-				document.getElementById(name).style.marginTop="5px";
-				document.getElementById(name).style.marginRight="5px";
-
-	var h = document.getElementById(name).clientHeight;
-	var w = document.getElementById(name).offsetWidth;
-	    w = w - margin.left - margin.right;
-		h = h - margin.top - margin.bottom;		
-    radius = Math.min(w, h) / 2;
-	console.log(array);
-keys = ["1","2","3","2P","4","5","6"];
-var arc = d3.arc()
-    .outerRadius(radius-10)
-    .innerRadius(radius/2);
-	
-var c10 = d3.scaleOrdinal(d3.schemeCategory10).domain(keys);
-
-//metti label, interattività, transitions, legalo al filtro del bar chart (mostra le cose del filtro 2015... magari cerca di tenere il grafico e modificare i settori
-
-/*var labelArc = d3.arc()
-    .outerRadius(radius - 40)
-    .innerRadius(radius - 40);
-*/
-var pie = d3.pie()
-    .sort(null)
-    .value(function(d) { return d.percent; });
-
-var svg = d3.select("#"+name).append("svg")
-			.attr("width", w)
-			.attr("height", h)
-			.append("g")
-			.attr("transform", "translate(" + w / 2 + "," + h/2 + ")");
-
-  var g = svg.selectAll(".arc")
-			.data(pie(array))
-			.enter()
-			.append("g")
-			.attr("class", "arc");
-	
-  g.append("path")
-      .attr("d", arc)
-      .style("fill", function (d){return c10(d.data.key)})
-
-/*  g.append("text")
-      .attr("transform", function(d) { return "translate(" + labelArc.centroid(d) + ")"; })
-      .attr("dy", ".35em")   roba semi inutile
-      .text(function(d) { return d.key; });
-*/ 
-	  }
 
 function vt(){
 	main = document.getElementById("main");

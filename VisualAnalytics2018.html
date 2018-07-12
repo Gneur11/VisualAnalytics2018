@@ -5,6 +5,8 @@
 <head>
  <script type="text/javascript" src="d3.min.js"></script>
  <script type="text/javascript" src="visualizations.js"></script>
+ <script type="text/javascript" src="billboard.js"></script>
+ <script type="stylesheet" src="billboard.cc"></script>
  <style> 
 	
 	html, body { 
@@ -95,35 +97,48 @@
 	}
 	
 	.mainClass {
-		margin-left:5px;
-		margin-top:5px;
-		margin-bottom:5px;
+		margin-left:3px;
+		margin-top:4px;
 		background-color:white;
 		width:60%;
-		height:100%;
+		height:49%;
 		float:left;
 		box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
 		transition: all 0.3s cubic-bezier(.25,.8,.25,1);
 	}
 	
 	.aux1{
-		margin-left:5px;
+		margin-top:4px;
+		margin-right:3px;
+		margin-left:3px;
 		background-color:white;
-		width:40%;
-		height:50%;
+		width:39%;
+		height:49%;
 		float:right;
 		box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
 		transition: all 0.3s cubic-bezier(.25,.8,.25,1);
 		}
 		
 	.aux2{
-		margin-left:5px;
-		box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+		margin-top:4px;
+		margin-right:3px;
+		margin-left:3px;		box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
 		transition: all 0.3s cubic-bezier(.25,.8,.25,1);
 		float:right;
-		width:40%;
-		height:50%;
-		background-color:green;
+		width:39%;
+		height:49%;
+		background-color:white;
+		box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+	}	
+	.gatebar{
+		margin-top:4px;
+		margin-left:3px;
+		width: 60%;
+		background-color:white;
+		height:49%;
+		float:left;
+		box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+
 	}
 	
 	.tooltip {
