@@ -6,7 +6,7 @@
  <script type="text/javascript" src="d3.min.js"></script>
  <script type="text/javascript" src="visualizations.js"></script>
  <script type="text/javascript" src="billboard.js"></script>
- <script type="stylesheet" src="billboard.cc"></script>
+ <script type="text/css" src="billboard.css"></script>
  <style> 
 	
 	html, body { 
@@ -141,7 +141,7 @@
 
 	}
 	
-	.tooltip {
+	.scatterTooltip {
 	 position: absolute;
 	  text-align: center;
 	  width: 80px;
@@ -152,10 +152,14 @@
 	  border-radius: 8px;
 	  pointer-events: none;
 	}
+	
+	.bb-chart-arc.bb-target text {
+		fill-opacity: 0;
+	}
 	</style> 
  
  </head>
-<body style="margin:0">
+<body style="margin:0" onresize="resize()">
 
 	<div class="title" style="text-align:center;font-size:4vw;font-family: Tahoma, Geneva, sans-serif">
 		<text> Visual Analytics 2018 </text> 

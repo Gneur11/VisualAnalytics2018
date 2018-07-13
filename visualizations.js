@@ -1,5 +1,13 @@
 var margin = {top: 40, right: 20, bottom: 50, left: 60};
+var gInput = "";
+
+
+function resize (e) {
+		init(gInput);
+	};
+
 function init(input){
+	gInput = input;
 	el = document.getElementById("view");
 	if(!!el){
 		el.remove();
@@ -84,12 +92,13 @@ function scatter(name,filter){   //gauge chart per mostrare la percentuale di tu
 				ordered = moreThan3;
 			}
 			var div = d3.select("#container").append("div").attr("id",name).attr("class","mainClass");
-			document.getElementById(name).style.width="60%";
-			document.getElementById(name).style.height="70%";
+			document.getElementById(name).style.width="59%";
+			document.getElementById(name).style.float="left";
+			document.getElementById(name).style.height="80%";
 			var h = document.getElementById(name).clientHeight;
 			var w = document.getElementById(name).offsetWidth;
-			    w = w - margin.left - margin.right;
-				h = h - margin.top - margin.bottom -100;
+			    w = w - margin.right - margin.left;
+				h = h - margin.bottom - 90;
 			
 			var filters = ["General", "Rangers", "Same Day","Different Days","3 or more Days"];
 
@@ -157,7 +166,7 @@ function scatter(name,filter){   //gauge chart per mostrare la percentuale di tu
 				  .text("Vehicle");
 			
 			var tooldiv = d3.select("#"+name).append("div")
-							.attr("class","tooltip")
+							.attr("class","scatterTooltip")
 							.style("opacity",0)
 			
 			 // Add the y Axis
@@ -296,9 +305,53 @@ function scatter(name,filter){   //gauge chart per mostrare la percentuale di tu
 						.transition()
 						.duration(1000)
 						.call(d3.axisLeft(y));
-		}									
-			
+						}									
+				gauge("aux1");
+
 	})}
+
+function gauge(name){ //gauge viene stronzo, pensa di riutilizzare donut o bar chart per le percentuali di ranger o meno del filtro, forse è un po' inutile?
+	var div = d3.select("#container").append("div").attr("id",name).attr("class",name);
+				document.getElementById(name).style.float="right";
+				document.getElementById(name).style.height="50%";
+				document.getElementById(name).style.width="39%";
+	var h = document.getElementById(name).clientHeight;
+	var w = document.getElementById(name).offsetWidth;
+	    w = w -margin.right;
+		h = h -margin.bottom;		
+    
+var d = d3.select("#"+name).append("svg")
+			.attr("width", w)
+			.attr("height", h)
+			.attr("id","d"+name)
+			.style("float","left")
+			.append("g")
+			.attr("transform", "translate(" + w / 2 + "," + h/2 + ")");
+
+var chart = bb.generate({
+  data: {
+    columns: [
+	["data", 91.4]
+    ],
+    type: "donut", //gauge
+    onclick: function(d, i) {
+	console.log("onclick", d, i);
+   },
+    onover: function(d, i) {
+	console.log("onover", d, i);
+   },
+    onout: function(d, i) {
+	console.log("onout", d, i);
+   }
+  },
+  bindto: "#d"+name
+});
+
+	chart.load({
+		columns: [["data", 50]]
+	});
+	
+}	
 
 function vID(){
 	main = document.getElementById("main");
@@ -379,7 +432,7 @@ function onchange() {
 				selectValue= ""+s[s.selectedIndex].value;
 				bar("main",selectValue);
 			}
-			
+		
 function pieroni(array,name,title){ // se applichi anche al gatebar? cioè fai vedere tipo il numero di visite per gate/ranger stop in generale--> le entrate saranno più frequentate ecc ecc
 	var div = d3.select("#container").append("div").attr("id",name).attr("class",name);
 				document.getElementById(name).style.float="right";
@@ -387,15 +440,16 @@ function pieroni(array,name,title){ // se applichi anche al gatebar? cioè fai v
 	console.log(array);
 	var h = document.getElementById(name).clientHeight;
 	var w = document.getElementById(name).offsetWidth;
-	    w = w -margin.right;
-		h = h -margin.bottom ;		
+	    w = w - margin.right;
+		h = h - margin.bottom;		
     radius = Math.min(w, h) / 2;
 	console.log(array);
-	
+	//forse al posto di ricaricare ste cose si potrebbe nascondere la div e poi rimostrarla quando e stato calcolato tutto, "ricaricando" i nuovi risultati così è animato?
 	var svg = d3.select("#"+name).append("svg")
 			.attr("width", w)
 			.attr("height", h)
 			.attr("id","svg"+name)
+			.style("float","left")
 			.append("g")
 			.attr("transform", "translate(" + w / 2 + "," + h/2 + ")");
 		
@@ -425,22 +479,42 @@ function pieroni(array,name,title){ // se applichi anche al gatebar? cioè fai v
 		columns: cols,
 		type: "donut",
 		onover: function(d, i) {
+					div.append("div").style("text-align","center").attr("id","temp").attr("backgroundColor","red").text((Math.round (d.ratio*1000))/10 + "%");
+					console.log(d);
 		console.log("onover", d, i);
 	   },
 		onout: function(d, i) {
+					document.getElementById("temp").remove();
 		console.log("onout", d, i);
 	   }
 	  },
-	  
-	  donut: {
+		legend:{
+			show: true,
+			position:'right',
+		},
+		donut: {
 		title: title,
-	  },
-	  tooltip:{
-		show: true
 	  },
 	  bindto: "#svg"+name
 	});
-/*	chart.load({
+	
+/*	v = "svgaux1"
+	c = document.getElementById(v);
+	box = c.getBBox();
+	console.log(box.x + 'x' + box.y);
+	console.log(box.width + 'x' + box.height);
+	div.append("svg")
+		//		.style("float","right")
+				.style("z-index",2)
+		.attr("x",box.x)
+		.attr("width", 50)
+		.attr("height", 100)
+		.append("rect")
+		.attr("fill","blue")
+		.attr("width",100)
+		.attr("height",100);
+		;/*	
+chart.load({
 		columns: [      
 			["setosa", 0.2, 0.2, 0.2, 0.2, 0.2, 0.4, 0.3, 0.2, 0.2, 0.1, 0.2, 0.2, 0.1, 0.1, 0.2, 0.4, 0.4, 0.3, 0.3, 0.3, 0.2, 0.4, 0.2, 0.5, 0.2, 0.2, 0.4, 0.2, 0.2, 0.2, 0.2, 0.4, 0.1, 0.2, 0.2, 0.2, 0.2, 0.1, 0.2, 0.2, 0.3, 0.3, 0.2, 0.6, 0.4, 0.3, 0.2, 0.2, 0.2, 0.2],
 			["versicolor", 1.4, 1.5, 1.5, 1.3, 1.5, 1.3, 1.6, 1.0, 1.3, 1.4, 1.0, 1.5, 1.0, 1.4, 1.3, 1.4, 1.5, 1.0, 1.5, 1.1, 1.8, 1.3, 1.5, 1.2, 1.3, 1.4, 1.4, 1.7, 1.5, 1.0, 1.1, 1.0, 1.2, 1.6, 1.5, 1.6, 1.5, 1.3, 1.3, 1.3, 1.2, 1.4, 1.2, 1.0, 1.3, 1.2, 1.3, 1.3, 1.1, 1.3],
@@ -552,7 +626,7 @@ function auxBar(data,name,filter){
 					.attr("fill",function(d){if (d.key == "2P") {return "#EC9787";} else {return "steelblue";}})
 					.on("mouseover", function(d,i){
 								 canvas.append("text")
-									 .attr('id','tooltip')
+									 .attr('id','t1')
 									 .text(d.values.length)
 									 .attr("y", y(d.key)+ y.bandwidth()/2)
 									.attr("x", x(d.values.length) + 5)
@@ -562,7 +636,7 @@ function auxBar(data,name,filter){
 									.attr("stroke-width",2);
 							})
 					.on("mouseout", function(d,i){
-									canvas.selectAll("#tooltip")
+									canvas.select("#t1")
 										.remove();
 									d3.select(this)
 									.attr("stroke-width",0);	
@@ -733,6 +807,18 @@ function gateBar(key,filter){
 											} else { 
 												return "#fb9a99"; //rosa gates 
 											}})
+					.on("mouseover",function(d){canvas.append("text")
+													  .attr('id','t')
+													  .text(d.values.length)
+													  .attr("x", x(d.key))
+													 .attr("y", y(d.values.length)-(w/100))
+													 .style("font-size","10px")
+												d3.select(this)
+													.attr("stroke","black")
+													.attr("stroke-width",2);
+									})
+					.on("mouseout",function(d){	document.getElementById("t").remove();
+												d3.select(this).attr("stroke-width",0)})
 					.transition()
 					.duration(250)
 					.attr("height", function(d, i) {
@@ -1015,44 +1101,41 @@ function timeroni(name){
 				var time = parseTime(d.key);
 				d.key = format(time);
 				})
-			//console.log(ordered);
+			
+			
 			
 			var ordered1 = d3.nest()
 						.key(function(d){return d['key'];})
 						.entries(ordered);
-			//console.log(ordered1);
+			console.log(ordered1);
+			console.log(ordered1[0].key == ordered1[1].key);
+			
+			var a = ordered1.filter(function(d){if (d.key > ordered[0].key) {return d;}});
+			console.log(base);
+			//il filtro così funziona, puoi fare una select in base al pezzo di grafico dove arrivi e filtri così
+			//hai ancora i dati di base (base) intatti quindi puoi usare questo per calcolare il traffico per le linee del force graph
+			//il coso per selezionare si chiama brush.
+			console.log(a);
 			var div = d3.select("#container").append("div").attr("id",name).attr("class","mainClass");
 			document.getElementById(name).style.width="60%";
 			document.getElementById(name).style.height="70%";
 			var h = document.getElementById(name).clientHeight;
 			var w = document.getElementById(name).offsetWidth;
 			    w = w - margin.left - margin.right;
-				h = h - margin.top - margin.bottom -100;
+				h = h - margin.top - margin.bottom;
 
 			var max = d3.max(ordered1,function(d){return d.values.length;});
 			//console.log(max);
 			
 			var x = d3.scaleLinear().range([0, w-margin.right]),
 			y = d3.scaleLinear().range([h,0]);
-			
-			
-			//console.log(d3.extent(ordered1, function(d) {return d.key}));
-			//console.log(d3.extent(ordered1, function(d) {return d.values.length}));
-			
 			x.domain([0,ordered1.length]);
 			y.domain(d3.extent(ordered1, function(d) {return d.values.length;}));
-			
-			
 			var xAxis = d3.axisBottom(x);
 			var yAxis = d3.axisLeft(y);
-			
-			//console.log(x(5));
-			
 			var line = d3.line()
 						.x(function(d,i) {return x(i);})
-						.y(function(d) {return y(d.values.length);})
-						;//.curve(d3.curveCardinal);
-			
+						.y(function(d) {return y(d.values.length);})			
 			
 			var svg = d3.select("#"+name).append("svg")
 					.attr("id", "svg"+name)
@@ -1102,6 +1185,8 @@ function timeroni(name){
 					.duration(2000)
 					.attr("stroke-dashoffset", 0);
 
+					
+		//hai tutte le date quindi quella cosa dei range da selezionare per poi calcolare i numeri per il force graph potrebbe essere più che fattibile
 	});
 };
 
