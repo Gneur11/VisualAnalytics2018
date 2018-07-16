@@ -306,11 +306,11 @@ function scatter(name,filter){   //gauge chart per mostrare la percentuale di tu
 						.duration(1000)
 						.call(d3.axisLeft(y));
 						}									
-				gauge("aux1");
+				gauge("aux1",ordered);
 
 	})}
 
-function gauge(name){ //gauge viene stronzo, pensa di riutilizzare donut o bar chart per le percentuali di ranger o meno del filtro, forse è un po' inutile?
+function gauge(name,data){ //gauge viene stronzo, pensa di riutilizzare donut o bar chart per le percentuali di ranger o meno del filtro, forse è un po' inutile?
 	var div = d3.select("#container").append("div").attr("id",name).attr("class",name);
 				document.getElementById(name).style.float="right";
 				document.getElementById(name).style.height="50%";
@@ -402,7 +402,7 @@ function bar(name,filter){
 							.entries(temp)
 							.sort(function(a, b){ return d3.descending(a.values, b.values);});
 				auxBar(ordered,name,filter);
-		} else if (filter == "Monthly"){        // MANCA
+		} else if (filter == "Monthly"){        // need serious love
 				 ordered = d3.nest()
 							.key(function(d){return d['car-type'];})
 							.key(function(d) {return d['Timestamp'];})
@@ -433,7 +433,7 @@ function onchange() {
 				bar("main",selectValue);
 			}
 		
-function pieroni(array,name,title){ // se applichi anche al gatebar? cioè fai vedere tipo il numero di visite per gate/ranger stop in generale--> le entrate saranno più frequentate ecc ecc
+function pieroni(array,name,title){ 
 	var div = d3.select("#container").append("div").attr("id",name).attr("class",name);
 				document.getElementById(name).style.float="right";
 		
@@ -1112,10 +1112,16 @@ function timeroni(name){
 			
 			var a = ordered1.filter(function(d){if (d.key > ordered[0].key) {return d;}});
 			console.log(base);
-			//il filtro così funziona, puoi fare una select in base al pezzo di grafico dove arrivi e filtri così
-			//hai ancora i dati di base (base) intatti quindi puoi usare questo per calcolare il traffico per le linee del force graph
-			//il coso per selezionare si chiama brush.
-			console.log(a);
+			//il filtro così funziona, puoi fare una select in base al pezzo di grafico dove arrivi e filtri così ma dovrai fare sempre il force graph			
+			/*
+			fai a filtri, "primavera(2015)/estate/autunno/inverno/primavera(2016"
+			primavera 1º marzo - 31 maggio
+			estate (giugno - 31 agosto)
+			autunno (settembre - 30 novembre)
+			inverno (dicembre-29 febb)
+			evidenzia anche nel grafico, tipo "se filtro primavera allora tutta la linea diventa trasparente"
+			*/
+			
 			var div = d3.select("#container").append("div").attr("id",name).attr("class","mainClass");
 			document.getElementById(name).style.width="60%";
 			document.getElementById(name).style.height="70%";
@@ -1123,11 +1129,10 @@ function timeroni(name){
 			var w = document.getElementById(name).offsetWidth;
 			    w = w - margin.left - margin.right;
 				h = h - margin.top - margin.bottom;
-
 			var max = d3.max(ordered1,function(d){return d.values.length;});
 			//console.log(max);
 			
-			var x = d3.scaleLinear().range([0, w-margin.right]),
+			var x = d3.scaleLinear().range([0, w]), // w -marginright
 			y = d3.scaleLinear().range([h,0]);
 			x.domain([0,ordered1.length]);
 			y.domain(d3.extent(ordered1, function(d) {return d.values.length;}));
@@ -1143,7 +1148,7 @@ function timeroni(name){
 					.attr("height", h + margin.top + margin.bottom)
 					.append("g")
 					.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-					
+			
 			svg.append("g")
 				  .attr("transform", "translate(0," + h + ")")
 				  .call(d3.axisBottom(x));
@@ -1183,11 +1188,9 @@ function timeroni(name){
 				  .attr("stroke-dashoffset", totalLength)
 				  .transition()
 					.duration(2000)
-					.attr("stroke-dashoffset", 0);
-
-					
-		//hai tutte le date quindi quella cosa dei range da selezionare per poi calcolare i numeri per il force graph potrebbe essere più che fattibile
+					.attr("stroke-dashoffset", 0);	
 	});
-};
+}
+	
 
 
