@@ -47,7 +47,7 @@ d3.selection.prototype.moveToBack = function() {
         });
     };
 	
-function scatter(name,filter){   //gauge chart per mostrare la percentuale di tutti quelli che hai? giusto per non fare pie chart
+function scatter(name,filter,auxName){   //pie chart "comanda"quello che viene visualizzato, aggiungere un'altra view con una timeline di quando si va a posizionare la visita del tipo (pallini su time series) e una coi giorni di visita?
 	d3.csv("Lekagul Sensor Data.csv").then(function(data){
 			var base = data;
 			var parseTime = d3.timeParse("%Y-%m-%d %H:%M:%S");
@@ -92,7 +92,7 @@ function scatter(name,filter){   //gauge chart per mostrare la percentuale di tu
 				ordered = moreThan3;
 			}
 			var div = d3.select("#container").append("div").attr("id",name).attr("class","mainClass");
-			document.getElementById(name).style.width="59%";
+			document.getElementById(name).style.width="80%";
 			document.getElementById(name).style.float="left";
 			document.getElementById(name).style.height="80%";
 			var h = document.getElementById(name).clientHeight;
@@ -120,7 +120,9 @@ function scatter(name,filter){   //gauge chart per mostrare la percentuale di tu
 					.attr("height", h + margin.top + margin.bottom)
 					.append("g")
 					.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-	
+
+/* legend, tolta perchè si basa sul pie chart
+					
 			var legendRect = 18;
 			var legendSpacing = 4;
 			
@@ -147,6 +149,7 @@ function scatter(name,filter){   //gauge chart per mostrare la percentuale di tu
 				.attr("x", 25)
 				.attr("y", 15)
 				.text(function(d) {return d})
+*/
 			//draw 		
 			var max = d3.max(ordered,function(d){return d.sum})+5;
 			var x = d3.scaleLinear().domain([0, ordered.length]).range([0, w-margin.right]),
@@ -164,11 +167,12 @@ function scatter(name,filter){   //gauge chart per mostrare la percentuale di tu
 									   (h + margin.top) + ")")
 				  .style("text-anchor", "middle")
 				  .text("Vehicle");
-			
+//rimuovi anche il tooltip, info verranno messe in un altra finestra 
+/*		
 			var tooldiv = d3.select("#"+name).append("div")
 							.attr("class","scatterTooltip")
 							.style("opacity",0)
-			
+	*/		
 			 // Add the y Axis
 			svg.append("g")
 				.attr("class","y")
@@ -182,7 +186,7 @@ function scatter(name,filter){   //gauge chart per mostrare la percentuale di tu
 				  .attr("dy", "1em")
 				  .style("text-anchor", "middle")
 				  .text("Number of readings"); 
-					
+				
 			 svg.selectAll("circle")
 					.data(ordered)
 					.enter()
@@ -190,8 +194,9 @@ function scatter(name,filter){   //gauge chart per mostrare la percentuale di tu
 					.attr("cx", function (d,i){return x(i);})
 					.attr("cy", function (d,i) {return y(d.sum);} )
 					.attr("r", 2)
-					.attr("fill",function(d){if (d.car == "2P") {return "#EC9787"} else {return "steelblue"}})
-						.on("mouseover", function(d){ 	d3.select(this).moveToFront();
+					.attr("fill", "lightgray")
+					//.attr("fill","black")//function(d){if (d.car == "2P") {return "#EC9787"} else {return "steelblue"}}) colori sono comandati da pie
+			/*			.on("mouseover", function(d){ 	d3.select(this).moveToFront();
 														d3.select(this)
 															.transition()
 															.duration(500)
@@ -214,9 +219,9 @@ function scatter(name,filter){   //gauge chart per mostrare la percentuale di tu
 														tooldiv.style("left", (d3.event.pageX + 15) + "px")
 																.style("top", (d3.event.pageY - 40) +"px")
 														})
-						.on("mouseout", function(d) { d3.select(this).transition().duration(500).style("r",2).attr("stroke-width",0)
-														tooldiv.transition().duration(500).style("opacity",0).style("width","80px")
-														tooldiv.selectAll("span").remove()})
+						.on("mouseout", function(d) { d3.select(this).transition().duration(500).style("r",2).attr("stroke-width",0)})
+													tooldiv.transition().duration(500).style("opacity",0).style("width","80px")
+														tooldiv.selectAll("span").remove()}) */
 				
 						
 		function onchange() {
@@ -267,9 +272,10 @@ function scatter(name,filter){   //gauge chart per mostrare la percentuale di tu
 						.append("circle")
 						.attr("cx", function (d,i){return x(i);})
 						.attr("cy", function (d,i) {return y(d.sum);} )
-						.attr("r", 2)
-						.attr("fill",function(d){if (d.car == "2P") {return "#EC9787"} else {return "steelblue"}})
-							.on("mouseover", function(d){ d3.select(this).moveToFront();
+						.attr("r", function(d) {if (filter == "3 or more Days") {return 10} else {return 2}}) //non so perchè non va
+						.attr("fill", "lightgray")
+						//.attr("fill",function(d){if (d.car == "2P") {return "#EC9787"} else {return "steelblue"}})
+		/*					.on("mouseover", function(d){ d3.select(this).moveToFront();
 															d3.select(this)
 															.transition()
 															.duration(500)
@@ -295,7 +301,7 @@ function scatter(name,filter){   //gauge chart per mostrare la percentuale di tu
 						.on("mouseout", function(d) { d3.select(this).transition().duration(500).style("r",2).attr("stroke-width",0)
 														tooldiv.transition().duration(500).style("opacity",0).style("width","80px")
 														tooldiv.selectAll("span").remove()})			
-							
+			*/				
 					svg.select(".x")
 						.transition()
 						.duration(1000)
@@ -305,16 +311,82 @@ function scatter(name,filter){   //gauge chart per mostrare la percentuale di tu
 						.transition()
 						.duration(1000)
 						.call(d3.axisLeft(y));
-						}									
-				gauge("aux1",ordered);
-
+					//update pie;
+					t2P = 0;
+					t1 = 0;
+					t2 = 0;
+					t3 = 0;
+					t4 = 0;
+					t5 = 0;
+					t6 = 0;
+					for(i=0;i<data.length;i++){
+						if(data[i].car == "2P"){
+							t2P = t2P +1;
+						} else if (data[i].car == "1"){
+							t1 = t1 +1;
+						} else if (data[i].car == "2"){
+							t2 = t2 +1;
+						} else if (data[i].car == "3"){
+							t3 = t3 +1;
+						} else if (data[i].car == "4"){
+							t4 = t4 +1;
+						} else if (data[i].car == "5"){
+							t5 = t5 +1;
+						} else if (data[i].car == "6"){
+							t6 = t6 +1;
+						}
+					}
+					setTimeout(function() {
+					chart.unload("1");
+					chart.unload("2");
+					chart.unload("3");
+					chart.unload("4");
+					chart.unload("5");
+					chart.unload("6");
+					chart.unload("Rangers");
+					},1000);
+					
+					setTimeout(function() {
+						chart.load({
+						columns:[["1",t1],["2",t2],["3",t3],["4",t4],["5",t5],["6",t6],["2P",t2P],]}
+					)
+					},1500)
+					}
+					
+    var chart = gauge("aux1",ordered,h,w);
 	})}
 
-function gauge(name,data){ //gauge viene stronzo, pensa di riutilizzare donut o bar chart per le percentuali di ranger o meno del filtro, forse è un po' inutile?
+function gauge(name,data){ 
+	console.log(data);
+	t2P = 0;
+	t1 = 0;
+	t2 = 0;
+	t3 = 0;
+	t4 = 0;
+	t5 = 0;
+	t6 = 0;
+	for(i=0;i<data.length;i++){
+		if(data[i].car == "2P"){
+			t2P = t2P +1;
+		} else if (data[i].car == "1"){
+			t1 = t1 +1;
+		} else if (data[i].car == "2"){
+			t2 = t2 +1;
+		} else if (data[i].car == "3"){
+			t3 = t3 +1;
+		} else if (data[i].car == "4"){
+			t4 = t4 +1;
+		} else if (data[i].car == "5"){
+			t5 = t5 +1;
+		} else if (data[i].car == "6"){
+			t6 = t6 +1;
+		}
+	}
+
 	var div = d3.select("#container").append("div").attr("id",name).attr("class",name);
 				document.getElementById(name).style.float="right";
 				document.getElementById(name).style.height="50%";
-				document.getElementById(name).style.width="39%";
+				document.getElementById(name).style.width="19%";
 	var h = document.getElementById(name).clientHeight;
 	var w = document.getElementById(name).offsetWidth;
 	    w = w -margin.right;
@@ -327,30 +399,55 @@ var d = d3.select("#"+name).append("svg")
 			.style("float","left")
 			.append("g")
 			.attr("transform", "translate(" + w / 2 + "," + h/2 + ")");
+			
+	c = [["1", t1],["2", t2],["3", t3],["4", t4],["5", t5],["6", t6],["2P", t2P]]
+clicked = [];
+clicked["1t"] = 0;
+clicked["2t"] = 0;
+clicked["3t"] = 0;
+clicked["4t"] = 0;
+clicked["5t"] = 0;
+clicked["6t"] = 0;
+clicked["2Pt"] = 0;
 
+console.log(clicked);
+console.log(clicked["1t"] == 0);
 var chart = bb.generate({
   data: {
-    columns: [
-	["data", 91.4]
-    ],
+	columns: [[]],
     type: "donut", //gauge
     onclick: function(d, i) {
-	console.log("onclick", d, i);
-   },
+		val = d.id;
+		if(clicked[val+"t"] == 0){
+								clicked[val+"t"] = 1;
+							} else {
+								clicked[val+"t"] = 0;
+							}
+							console.log(clicked);
+		svg = d3.select("#svgmain")
+	//	svg.selectAll("circle").remove();
+	//	svg.selectAll("circle").attr("r",function(c){console.log(d,c);if(c.car == d.id){return 20}});
+		svg.selectAll("circle")
+			.filter(function(c){
+						if(c.car == val){
+							return c}}
+							)
+			.attr("fill",function(c,i) {if(clicked[val+"t"] == 1){
+																//console.log(clicked[val + "t"] == 0);	
+																return chart.color(val)} else {return "lightgray"}})
+			//console.log(clicked[val + "t"] == 0);
+  },
     onover: function(d, i) {
-	console.log("onover", d, i);
-   },
+					div.append("div").style("text-align","center").attr("id","temp").text((Math.round (d.ratio*1000))/10 + "%");
+	   },
     onout: function(d, i) {
-	console.log("onout", d, i);
-   }
+					document.getElementById("temp").remove();
+	   }
   },
   bindto: "#d"+name
 });
-
-	chart.load({
-		columns: [["data", 50]]
-	});
-	
+chart.load({columns:c});
+return chart;
 }	
 
 function vID(){
@@ -358,7 +455,7 @@ function vID(){
 	if(!!main){
 		main.remove();
 	}
-	scatter("main","General");
+	scatter("main","General","aux1");
 	console.log("mostra id");
 }
 
@@ -480,12 +577,9 @@ function pieroni(array,name,title){
 		type: "donut",
 		onover: function(d, i) {
 					div.append("div").style("text-align","center").attr("id","temp").attr("backgroundColor","red").text((Math.round (d.ratio*1000))/10 + "%");
-					console.log(d);
-		console.log("onover", d, i);
 	   },
 		onout: function(d, i) {
 					document.getElementById("temp").remove();
-		console.log("onout", d, i);
 	   }
 	  },
 		legend:{
@@ -497,32 +591,6 @@ function pieroni(array,name,title){
 	  },
 	  bindto: "#svg"+name
 	});
-	
-/*	v = "svgaux1"
-	c = document.getElementById(v);
-	box = c.getBBox();
-	console.log(box.x + 'x' + box.y);
-	console.log(box.width + 'x' + box.height);
-	div.append("svg")
-		//		.style("float","right")
-				.style("z-index",2)
-		.attr("x",box.x)
-		.attr("width", 50)
-		.attr("height", 100)
-		.append("rect")
-		.attr("fill","blue")
-		.attr("width",100)
-		.attr("height",100);
-		;/*	
-chart.load({
-		columns: [      
-			["setosa", 0.2, 0.2, 0.2, 0.2, 0.2, 0.4, 0.3, 0.2, 0.2, 0.1, 0.2, 0.2, 0.1, 0.1, 0.2, 0.4, 0.4, 0.3, 0.3, 0.3, 0.2, 0.4, 0.2, 0.5, 0.2, 0.2, 0.4, 0.2, 0.2, 0.2, 0.2, 0.4, 0.1, 0.2, 0.2, 0.2, 0.2, 0.1, 0.2, 0.2, 0.3, 0.3, 0.2, 0.6, 0.4, 0.3, 0.2, 0.2, 0.2, 0.2],
-			["versicolor", 1.4, 1.5, 1.5, 1.3, 1.5, 1.3, 1.6, 1.0, 1.3, 1.4, 1.0, 1.5, 1.0, 1.4, 1.3, 1.4, 1.5, 1.0, 1.5, 1.1, 1.8, 1.3, 1.5, 1.2, 1.3, 1.4, 1.4, 1.7, 1.5, 1.0, 1.1, 1.0, 1.2, 1.6, 1.5, 1.6, 1.5, 1.3, 1.3, 1.3, 1.2, 1.4, 1.2, 1.0, 1.3, 1.2, 1.3, 1.3, 1.1, 1.3],
-			["virginica", 2.5, 1.9, 2.1, 1.8, 2.2, 2.1, 1.7, 1.8, 1.8, 2.5, 2.0, 1.9, 2.1, 2.0, 2.4, 2.3, 1.8, 2.2, 2.3, 1.5, 2.3, 2.0, 2.0, 1.8, 2.1, 1.8, 1.8, 1.8, 2.1, 1.6, 1.9, 2.0, 2.2, 1.5, 1.4, 2.3, 2.4, 1.8, 1.8, 2.1, 2.4, 2.3, 1.9, 2.3, 2.5, 2.3, 1.9, 2.0, 2.3, 1.8],
-		]
-	});
-	*/
-
   }
 
 function auxBar(data,name,filter){
