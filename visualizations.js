@@ -6,7 +6,7 @@ function resize (e) {
 		init(gInput);
 	};
 
-function init(input){
+function init(input,ele){
 	gInput = input;
 	el = document.getElementById("view");
 	if(!!el){
@@ -92,20 +92,53 @@ function scatter(name,filter,auxName){   //pie chart "comanda"quello che viene v
 				ordered = moreThan3;
 			}
 			var div = d3.select("#container").append("div").attr("id",name).attr("class","mainClass");
-			document.getElementById(name).style.width="80%";
+			document.getElementById(name).style.width="78%";
 			document.getElementById(name).style.float="left";
 			document.getElementById(name).style.height="80%";
 			var h = document.getElementById(name).clientHeight;
 			var w = document.getElementById(name).offsetWidth;
-			    w = w - margin.right - margin.left;
-				h = h - margin.bottom - 90;
+			    w = w + 20 - margin.right - margin.left;
+				h = h + margin.top - margin.bottom - 140;
 			
 			var filters = ["General", "Rangers", "Same Day","Different Days","3 or more Days"];
-
+			
+			var hid = false;
+			
+			d3.select("#"+name).append("div")
+					.append("input")
+					.style("margin","auto")
+					.style("display","block")
+					.attr("class","filterButton")
+					.style("background-color","#38B6FF")
+					.style("border","none")
+					.style("margin-top","20px")
+					.style("margin-left","20px")
+					.style("margin-right","20px")
+					.style("float","right")
+					.style("color","white")
+					.attr("type","button")
+					.attr("value","Hide all")
+					.on("click",function(){if(!hid) {
+											d3.select("#svg"+name)
+											.selectAll("circle")
+											.style("opacity","0");
+											d3.select(this).attr("value","Show all")
+											hid = true;
+											} else {
+											d3.select("#svg"+name)
+											.selectAll("circle")
+											.style("opacity","1")
+											d3.select(this).attr("value","Hide all")
+											hid = false;}
+											})
+			
+			
 			var s = d3.select('#'+name)
 						  .append('select')
 							.attr("id","sel")
 							.attr('class','select')
+							.style("float","left")
+							.style("margin","20px")
 							.on('change',onchange)
 
 			var options = s
@@ -120,36 +153,15 @@ function scatter(name,filter,auxName){   //pie chart "comanda"quello che viene v
 					.attr("height", h + margin.top + margin.bottom)
 					.append("g")
 					.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-/* legend, tolta perchè si basa sul pie chart
-					
-			var legendRect = 18;
-			var legendSpacing = 4;
 			
-			legend = svg.selectAll('.legend')                     // NEW
-			  .data(["Rangers","Other"])                                   // NEW
-			  .enter()                                                // NEW
-			  .append('g')                                            // NEW
-			  .attr('class', 'legend')                    
-			  .attr("transform", function(d,i){
-				  var height = legendRect + legendSpacing;
-				  var offset = (w + w/2 )/2;
-				  var horz = i * (w - offset);
-				  var vert = -2 * legendRect;
-				  return "translate("+ (w - horz + -100)+",-10)"
-			  });
-
-			 legend.append("rect")
-				.attr("width",20)
-				.attr("height",20)
-				.style("fill",function(d,i){if (d=="Rangers") {return "#EC9787";}
-											else if (d=="Other"){return "steelblue"}}) //metti a posto tutti i colori anche sul grafo con filtro generale e sposta legenda
-				
-			legend.append("text")
-				.attr("x", 25)
-				.attr("y", 15)
-				.text(function(d) {return d})
-*/
+		
+			svg.append("text")             
+				  .attr("transform",
+						"translate(" + (w/2) + " ," + 
+									   0 + ")")
+				  .style("text-anchor", "middle")
+				  .text("Number of readings per vehicle ID");
+			
 			//draw 		
 			var max = d3.max(ordered,function(d){return d.sum})+5;
 			var x = d3.scaleLinear().domain([0, ordered.length]).range([0, w-margin.right]),
@@ -159,7 +171,6 @@ function scatter(name,filter,auxName){   //pie chart "comanda"quello che viene v
 				  .attr("transform", "translate(0," + h + ")")
 				  .attr("class","x") 
 				  .call(d3.axisBottom(x));
-
 			  // text label for the x axis
 			svg.append("text")             
 				  .attr("transform",
@@ -227,6 +238,7 @@ function scatter(name,filter,auxName){   //pie chart "comanda"quello che viene v
 		function onchange() {
 			s = document.getElementById("sel")
 			selectValue= ""+s[s.selectedIndex].value;
+			filter = selectValue;
 				if(selectValue == "General") {
 						data = every;
 						//currentGraphs.filterB = selectValue;
@@ -264,6 +276,7 @@ function scatter(name,filter,auxName){   //pie chart "comanda"quello che viene v
 						x.domain([0,data.length-1]);
 						y.domain([0,max]);
 					} 
+					console.log(filter);
 					svg.selectAll("circle")
 						.remove()
 					 svg.selectAll("circle")
@@ -272,7 +285,7 @@ function scatter(name,filter,auxName){   //pie chart "comanda"quello che viene v
 						.append("circle")
 						.attr("cx", function (d,i){return x(i);})
 						.attr("cy", function (d,i) {return y(d.sum);} )
-						.attr("r", function(d) {if (filter == "3 or more Days") {return 10} else {return 2}}) //non so perchè non va
+						.attr("r", function(d) {if (filter == "3 or more Days") {return 4.6} else {return 2}}) //non so perchè non va
 						.attr("fill", "lightgray")
 						//.attr("fill",function(d){if (d.car == "2P") {return "#EC9787"} else {return "steelblue"}})
 		/*					.on("mouseover", function(d){ d3.select(this).moveToFront();
@@ -352,9 +365,10 @@ function scatter(name,filter,auxName){   //pie chart "comanda"quello che viene v
 					)
 					},1500)
 					}
-					
+	
     var chart = gauge("aux1",ordered,h,w);
-	})}
+	}
+	)}
 
 function gauge(name,data){ 
 	console.log(data);
@@ -383,14 +397,14 @@ function gauge(name,data){
 		}
 	}
 
-	var div = d3.select("#container").append("div").attr("id",name).attr("class",name);
+	var div = d3.select("#container").append("div").attr("id",name).attr("class",name).style("font-size","12px");
 				document.getElementById(name).style.float="right";
 				document.getElementById(name).style.height="50%";
-				document.getElementById(name).style.width="19%";
+				document.getElementById(name).style.width="21%";
 	var h = document.getElementById(name).clientHeight;
 	var w = document.getElementById(name).offsetWidth;
-	    w = w -margin.right;
-		h = h -margin.bottom;		
+	    w = w ;
+		h = h + margin.top - 10 - margin.bottom;		
     
 var d = d3.select("#"+name).append("svg")
 			.attr("width", w)
@@ -400,6 +414,13 @@ var d = d3.select("#"+name).append("svg")
 			.append("g")
 			.attr("transform", "translate(" + w / 2 + "," + h/2 + ")");
 			
+	/*	d.append("text")             
+				  .attr("transform",
+						"translate(" + (w/2) + " ," + 
+									   0 + ")")
+				  .style("text-anchor", "middle")
+				  .text("Number of readings per vehicle ID");
+*/	
 	c = [["1", t1],["2", t2],["3", t3],["4", t4],["5", t5],["6", t6],["2P", t2P]]
 clicked = [];
 clicked["1t"] = 0;
@@ -435,18 +456,23 @@ var chart = bb.generate({
 			.attr("fill",function(c,i) {if(clicked[val+"t"] == 1){
 																//console.log(clicked[val + "t"] == 0);	
 																return chart.color(val)} else {return "lightgray"}})
+			.attr("opacity","1")
 			//console.log(clicked[val + "t"] == 0);
   },
     onover: function(d, i) {
-					div.append("div").style("text-align","center").attr("id","temp").text((Math.round (d.ratio*1000))/10 + "%");
+					div.append("div").attr("y",h-40).style("text-align","center").attr("id","temp").text((Math.round (d.ratio*1000))/10 + "%");
 	   },
     onout: function(d, i) {
 					document.getElementById("temp").remove();
 	   }
   },
+  donut:{
+	  title: "% of \n vehicle type"
+  },
   bindto: "#d"+name
 });
 chart.load({columns:c});
+			
 return chart;
 }	
 
@@ -531,14 +557,14 @@ function onchange() {
 			}
 		
 function pieroni(array,name,title){ 
-	var div = d3.select("#container").append("div").attr("id",name).attr("class",name);
+	var div = d3.select("#container").append("div").attr("id",name).attr("class",name).style("font-size","12px");
 				document.getElementById(name).style.float="right";
-		
+				
 	console.log(array);
 	var h = document.getElementById(name).clientHeight;
 	var w = document.getElementById(name).offsetWidth;
-	    w = w - margin.right;
-		h = h - margin.bottom;		
+	    w = w + margin.left - margin.right;
+		h = h + margin.top - 10 - margin.bottom;		
     radius = Math.min(w, h) / 2;
 	console.log(array);
 	//forse al posto di ricaricare ste cose si potrebbe nascondere la div e poi rimostrarla quando e stato calcolato tutto, "ricaricando" i nuovi risultati così è animato?
@@ -576,7 +602,7 @@ function pieroni(array,name,title){
 		columns: cols,
 		type: "donut",
 		onover: function(d, i) {
-					div.append("div").style("text-align","center").attr("id","temp").attr("backgroundColor","red").text((Math.round (d.ratio*1000))/10 + "%");
+					div.append("div").attr("x",w/2).style("text-align","center").attr("id","temp").text((Math.round (d.ratio*1000))/10 + "%");
 	   },
 		onout: function(d, i) {
 					document.getElementById("temp").remove();
@@ -585,6 +611,7 @@ function pieroni(array,name,title){
 		legend:{
 			show: true,
 			position:'right',
+			onover: function(d,i){alert(d)}
 		},
 		donut: {
 		title: title,
@@ -604,7 +631,7 @@ function auxBar(data,name,filter){
 				arr.push(obj);
 			}
 			console.log(max,arr);
-			pieroni(arr,"aux1","Traffic per \n vehicle type");
+			pieroni(arr,"aux1","% of traffic per \n vehicle type");
 			
 			var div = d3.select("#container").append("div").attr("id",name).attr("class","mainClass");
 			document.getElementById(name).style.float="left";
@@ -654,11 +681,17 @@ function auxBar(data,name,filter){
 					.attr("id", "svg"+name)
 					.append("g")
 					.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-		
+			
+			canvas.append("text")
+					.attr("transform","translate(" + (w/2)+ ", -15)")
+					.style("font-size","14px")
+					.style("text-anchor","middle")
+					.text("Number of readings per Vehicle Type")
+			
 			canvas.append("g")
 				  .attr("transform", "translate(0," + h + ")")
 				  .call(d3.axisBottom(x));
-
+					
 			  // text label for the x axis
 			canvas.append("text")             
 				  .attr("transform",
@@ -699,6 +732,7 @@ function auxBar(data,name,filter){
 									 .attr("y", y(d.key)+ y.bandwidth()/2)
 									.attr("x", x(d.values.length) + 5)
 									.style("font-size","10px")
+									.style("text-anchor","center")
 								d3.select(this)
 									.attr("stroke","black")
 									.attr("stroke-width",2);
@@ -822,7 +856,13 @@ function gateBar(key,filter){
 					.attr("id", "svgmain")
 					.append("g")
 					.attr("transform", "translate(" + margin.left  + "," + margin.top + ")");
-	
+				
+				canvas.append("text")
+					.attr("transform","translate(" + (w/2)+ ", -15)")
+					.style("font-size","14px")
+					.style("text-anchor","middle")
+					.text("Number of readings for Vehicle Type \"" + key + "\" at every sensor")
+				
 				canvas.append("g")
 				  .attr("transform", "translate(0," + h + ")")
 				  .call(d3.axisBottom(x))
@@ -840,6 +880,7 @@ function gateBar(key,filter){
 						"translate(" + (w/2) + " ," + 
 									   (h + margin.top + 40) + ")")
 				  .style("text-anchor", "middle")
+				  .style("font-size", "12px")
 				  .text("Sensor");
 			
 			 // Add the y Axis
@@ -850,10 +891,11 @@ function gateBar(key,filter){
 			// text label for the y axis
 			canvas.append("text")
 				.attr("transform", "rotate(-90)")
-				  .attr("y", 0 - margin.left)
+				  .attr("y", 0 - h/2)
 				  .attr("x",0 - (h / 2))
 				  .attr("dy", "1em")
 				  .style("text-anchor", "middle")
+				  .style("font-size","12px")
 				  .text("Number of readings");      
 			
 			console.log(f);
@@ -879,8 +921,8 @@ function gateBar(key,filter){
 													  .attr('id','t')
 													  .text(d.values.length)
 													  .attr("x", x(d.key))
-													 .attr("y", y(d.values.length)-(w/100))
-													 .style("font-size","10px")
+													  .attr("y", y(d.values.length)-(w/100))
+													  .style("font-size","10px")
 												d3.select(this)
 													.attr("stroke","black")
 													.attr("stroke-width",2);
@@ -947,7 +989,7 @@ function gateBar(key,filter){
 											}
 				}
 			arr = [{"key":"ranger-stops","percent":rangerStop},{"key":"general-gates","percent":generalGate},{"key":"entrances","percent":entrance},{"key":"gates","percent":gate},{"key":"campings","percent":camping}]
-			pieroni(arr,"aux2","Traffic per \n type of sensor");
+			pieroni(arr,"aux2","% of traffic per \n type of sensor");
 	});	
 }
 
