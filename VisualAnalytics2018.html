@@ -5,8 +5,9 @@
 <head>
  <script type="text/javascript" src="d3.min.js"></script>
  <script type="text/javascript" src="visualizations.js"></script>
- <script type="text/javascript" src="billboard.js"></script>
- <script type="text/css" src="billboard.css"></script>
+ <link rel="stylesheet" href="billboard.css">
+  <script type="text/javascript" src="billboard.js"></script>
+
  <style> 
 	
 	html, body { 
@@ -156,6 +157,20 @@
 	.bb-chart-arc.bb-target text {
 		fill-opacity: 0;
 	}
+	
+	i {
+    border: solid black;
+    border-width: 0 3px 3px 0;
+    display: inline-block;
+    padding: 3px;
+	}
+
+	.arrowRight {
+		transform: rotate(-45deg);
+		-webkit-transform: rotate(-45deg);
+	}
+
+	
 	</style> 
  
  </head>
@@ -176,7 +191,6 @@
 		<div id="view"> <text> Select filter... </text></div>
 
 	</div> 	
-	<div id="chart"> </div>
 	<script type="text/javascript">
 	//bar("a","month");
 	</script> 

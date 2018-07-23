@@ -109,6 +109,7 @@ function scatter(name,filter,auxName){   //pie chart "comanda"quello che viene v
 					.style("margin","auto")
 					.style("display","block")
 					.attr("class","filterButton")
+					.attr("id","showButton")
 					.style("background-color","#38B6FF")
 					.style("border","none")
 					.style("margin-top","20px")
@@ -117,7 +118,7 @@ function scatter(name,filter,auxName){   //pie chart "comanda"quello che viene v
 					.style("float","right")
 					.style("color","white")
 					.attr("type","button")
-					.attr("value","Hide all")
+					.attr("value","Hide all") 
 					.on("click",function(){if(!hid) {
 											d3.select("#svg"+name)
 											.selectAll("circle")
@@ -276,9 +277,12 @@ function scatter(name,filter,auxName){   //pie chart "comanda"quello che viene v
 						x.domain([0,data.length-1]);
 						y.domain([0,max]);
 					} 
-					console.log(filter);
+					//hid = false; 
 					svg.selectAll("circle")
 						.remove()
+					svg.select("#showButton")
+						.attr("text","Hide all");
+						
 					 svg.selectAll("circle")
 						.data(data)
 						.enter()
@@ -366,10 +370,103 @@ function scatter(name,filter,auxName){   //pie chart "comanda"quello che viene v
 					},1500)
 					}
 	
-    var chart = gauge("aux1",ordered,h,w);
-	}
-	)}
+    var chart = gauge("aux1",ordered);	}
+	)}        //problemi con hid, se nascondi e hai già schiacciato e quindi sono colorate e rischiacci viene fuori grigio.
 
+function timeBB(name,data){ //problemi col fare le cose, forse è inutile? idee?
+			var ordered = d3.nest()
+					.key(function(d){return d['Timestamp'];})
+					.entries(data);
+			var date = "2015-05-01 08:32:09"
+			var parseTime = d3.timeParse("%Y-%m-%d %H:%M:%S");
+			var c = parseTime(date);
+			var format = d3.timeFormat("%y-%m-%d");
+			ordered.forEach(function(d,i) {   
+				var time = parseTime(d.key);
+				d.key = format(time);
+				})
+			var ordered1 = d3.nest()
+						.key(function(d){return d['key'];})
+						.entries(ordered);
+			var a = ordered1.filter(function(d){if (d.key > ordered[0].key) {return d;}});
+			var div = d3.select("#container").append("div").attr("id",name).attr("class","mainClass");
+			document.getElementById(name).style.width="78%";
+			document.getElementById(name).style.height="33%";
+			var h = document.getElementById(name).clientHeight;
+			var w = document.getElementById(name).offsetWidth;
+			    w = w - margin.left - margin.right;
+				h = h - margin.top - margin.bottom;
+			var max = d3.max(ordered1,function(d){return d.values.length;});
+			//console.log(max);
+			
+			var x = d3.scaleLinear().range([0, w]), // w -marginright
+			y = d3.scaleLinear().range([h,0]);
+			x.domain([0,ordered1.length]);
+			y.domain(d3.extent(ordered1, function(d) {return d.values.length;}));
+			var xAxis = d3.axisBottom(x);
+			var yAxis = d3.axisLeft(y);
+			var line = d3.line()
+						.x(function(d,i) {return x(i);})
+						.y(function(d) {return y(d.values.length);})			
+			
+			var svg = d3.select("#"+name).append("svg")
+					.attr("id", "svg"+name)
+					.attr("width", w + margin.left + margin.right)
+					.attr("height", h + margin.top + margin.bottom)
+					.append("g")
+					.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+			
+			svg.append("g")
+				  .attr("transform", "translate(0," + h + ")")
+				  .call(d3.axisBottom(x));
+
+			  // text label for the x axis
+			svg.append("text")             
+				  .attr("transform",
+						"translate(" + (w/2) + " ," + 
+									   (h + margin.top) + ")")
+				  .style("text-anchor", "middle")
+				  .text("Day");
+			
+			 // Add the y Axis
+			svg.append("g")
+				.call(d3.axisLeft(y));
+	
+			// text label for the y axis
+			svg.append("text")
+				.attr("transform", "rotate(-90)")
+				  .attr("y", 0 - margin.left)
+				  .attr("x",0 - (h / 2))
+				  .attr("dy", "1em")
+				  .style("text-anchor", "middle")
+				  .text("Traffic");
+			
+		var path = svg.append("path")
+				.datum(ordered1)
+				.attr("fill","none")
+				.attr("stroke", "steelblue")
+				.attr("class","line")
+				.attr("stroke-width",1.5)
+				.attr("d",line);
+
+		var totalLength = path.node().getTotalLength();
+			
+			  path.attr("stroke-dasharray", totalLength + " " + totalLength)
+				  .attr("stroke-dashoffset", totalLength)
+				  .transition()
+					.duration(2000)
+					.attr("stroke-dashoffset", 0);	
+			svg.selectAll("dot")
+					.data(ordered1)
+				  .enter().append("circle")
+					.attr("r", 1)
+					.attr("fill","blue")
+					.attr("opacity","0.5")
+					.attr("cx", function(d,i) { return x(i); })
+					.attr("cy", function(d) { return y(d.values.length); });
+		return ordered1;
+		};
+	
 function gauge(name,data){ 
 	console.log(data);
 	t2P = 0;
@@ -413,67 +510,56 @@ var d = d3.select("#"+name).append("svg")
 			.style("float","left")
 			.append("g")
 			.attr("transform", "translate(" + w / 2 + "," + h/2 + ")");
-			
-	/*	d.append("text")             
-				  .attr("transform",
-						"translate(" + (w/2) + " ," + 
-									   0 + ")")
-				  .style("text-anchor", "middle")
-				  .text("Number of readings per vehicle ID");
-*/	
+	
 	c = [["1", t1],["2", t2],["3", t3],["4", t4],["5", t5],["6", t6],["2P", t2P]]
-clicked = [];
-clicked["1t"] = 0;
-clicked["2t"] = 0;
-clicked["3t"] = 0;
-clicked["4t"] = 0;
-clicked["5t"] = 0;
-clicked["6t"] = 0;
-clicked["2Pt"] = 0;
+	clicked = [];
+	clicked["1t"] = 0;
+	clicked["2t"] = 0;
+	clicked["3t"] = 0;
+	clicked["4t"] = 0;
+	clicked["5t"] = 0;
+	clicked["6t"] = 0;
+	clicked["2Pt"] = 0;
 
-console.log(clicked);
-console.log(clicked["1t"] == 0);
-var chart = bb.generate({
-  data: {
-	columns: [[]],
-    type: "donut", //gauge
-    onclick: function(d, i) {
-		val = d.id;
-		if(clicked[val+"t"] == 0){
-								clicked[val+"t"] = 1;
-							} else {
-								clicked[val+"t"] = 0;
-							}
-							console.log(clicked);
-		svg = d3.select("#svgmain")
-	//	svg.selectAll("circle").remove();
-	//	svg.selectAll("circle").attr("r",function(c){console.log(d,c);if(c.car == d.id){return 20}});
-		svg.selectAll("circle")
-			.filter(function(c){
-						if(c.car == val){
-							return c}}
-							)
-			.attr("fill",function(c,i) {if(clicked[val+"t"] == 1){
-																//console.log(clicked[val + "t"] == 0);	
-																return chart.color(val)} else {return "lightgray"}})
-			.attr("opacity","1")
-			//console.log(clicked[val + "t"] == 0);
-  },
-    onover: function(d, i) {
-					div.append("div").attr("y",h-40).style("text-align","center").attr("id","temp").text((Math.round (d.ratio*1000))/10 + "%");
-	   },
-    onout: function(d, i) {
-					document.getElementById("temp").remove();
-	   }
-  },
-  donut:{
-	  title: "% of \n vehicle type"
-  },
-  bindto: "#d"+name
-});
-chart.load({columns:c});
-			
-return chart;
+	console.log(clicked);
+	console.log(clicked["1t"] == 0);
+	var chart = bb.generate({
+	  data: {
+		columns: [[]],
+		type: "donut", //gauge
+		onclick: function(d, i) {
+			val = d.id;
+			if(clicked[val+"t"] == 0){
+									clicked[val+"t"] = 1;
+								} else {
+									clicked[val+"t"] = 0;
+								}
+								console.log(clicked);
+			svg = d3.select("#svgmain")
+			svg.selectAll("circle")
+				.filter(function(c){
+							if(c.car == val){
+								return c}}
+								)
+				.style("opacity","1")
+				.attr("fill",function(c,i) {if(clicked[val+"t"] == 1){
+																	return chart.color(val)} else {return "lightgray"}})
+	  },
+		onover: function(d, i) {
+						div.append("div").attr("y",h-40).style("text-align","center").attr("id","temp").text((Math.round (d.ratio*1000))/10 + "%");
+		   },
+		onout: function(d, i) {
+						document.getElementById("temp").remove();
+		   }
+	  },
+	  donut:{
+		  title: "% of \n vehicle type"
+	  },
+	  bindto: "#d"+name
+	});
+	chart.load({columns:c});
+				
+	return chart;
 }	
 
 function vID(){
@@ -567,7 +653,6 @@ function pieroni(array,name,title){
 		h = h + margin.top - 10 - margin.bottom;		
     radius = Math.min(w, h) / 2;
 	console.log(array);
-	//forse al posto di ricaricare ste cose si potrebbe nascondere la div e poi rimostrarla quando e stato calcolato tutto, "ricaricando" i nuovi risultati così è animato?
 	var svg = d3.select("#"+name).append("svg")
 			.attr("width", w)
 			.attr("height", h)
@@ -993,26 +1078,13 @@ function gateBar(key,filter){
 	});	
 }
 
-function multiLine(data,name) {
+function multiLine(data,name) { // va bene, vedi se aggiungere qualcosa tipo l'istogramma per veicolo per giorno della settimana
 			var div = d3.select("#container").append("div").attr("id",name).attr("class","mainClass");
 			document.getElementById(name).style.width="60%";
 			document.getElementById(name).style.height="60%";
 			document.getElementById(name).style.float="left";
 			var h = document.getElementById(name).clientHeight;
-			var w = document.getElementById(name).offsetWidth;
-			    w = w - margin.left - margin.right;
-				h = h - margin.top - margin.bottom- 100;
-			
-			var //x = d3.scaleTime().range([0,w]),
-		    x = d3.scalePoint().range([0, w]),
-			y = d3.scaleLinear().domain([19000,0]).range([0,h]);
-			
-			var xAxis = d3.axisBottom(x).tickFormat(d3.timeFormat("%b"));
-			var yAxis = d3.axisLeft(y);			
-			
-			
-			var z = d3.scaleOrdinal(d3.schemeCategory10);
-			z.domain(data, function(d){return d.key;}); //mappa per ogni tipo di veicolo il coloro 
+			var w = document.getElementById(name).offsetWidth - margin.right - 20;
 			var cols = [];
 			var months = [];
 			var rows= data.length;
@@ -1026,155 +1098,89 @@ function multiLine(data,name) {
 					cols[i][j]=(data[i].values[j].value);
 				}
 			}
-			
-			//console.log(cols);		
-	
-			
+			var line0 = [data[0].key];
 			var da0 = [];
 				for (var j=0; j< data[0].values.length; j++){
 					var linedata = {"type": data[0].key,"month": data[0].values[j].key, "value":+data[0].values[j].value}
 					da0.push(linedata);
 					months[j] = data[0].values[j].key;
+					line0.push(+data[0].values[j].value);
 				}
-			x.domain(months);
 			var da1 = [];
+			var line1 = [data[1].key];
 				for (var j=0; j<data[1].values.length; j++){
 					var linedata = {"type": data[1].key,"month": data[1].values[j].key, "value":+data[1].values[j].value}
 					da1.push(linedata);
+					line1.push(+data[1].values[j].value);
 				}
+			var line2 = [data[2].key];
 			var da2 = [];
 				for (var j=0; j<data[2].values.length; j++){
 					var linedata = {"type": data[2].key,"month": data[2].values[j].key, "value":+data[2].values[j].value}
 					da2.push(linedata);
+					line2.push(+data[2].values[j].value);
 				}
+			var line3 = [data[3].key];
 			var da3 = [];
 				for (var j=0; j<data[3].values.length; j++){
 					var linedata = {"type": data[3].key,"month": data[3].values[j].key, "value":+data[3].values[j].value}
 					da3.push(linedata);
+					line3.push(+data[3].values[j].value);
 				}
+			var line4 = [data[4].key];
 			var da4 = [];
 				for (var j=0; j<data[1].values.length; j++){
 					var linedata = {"type": data[4].key,"month": data[4].values[j].key, "value":+data[4].values[j].value}
 					da4.push(linedata);
+					line4.push(+data[4].values[j].value);
 				}
+			var line5 = [data[5].key];
 			var da5 = [];
 				for (var j=0; j<data[1].values.length; j++){
 					var linedata = {"type": data[5].key,"month": data[5].values[j].key, "value":+data[5].values[j].value}
 					da5.push(linedata);
+					line5.push(+data[5].values[j].value);
 				}
+			var line6 = [data[6].key];
 			var da6 = [];
 				for (var j=0; j<data[1].values.length; j++){
 					var linedata = {"type": data[6].key,"month": data[6].values[j].key, "value":+data[6].values[j].value}
 					da6.push(linedata);
+					line6.push(+data[6].values[j].value);
 				}			
-			
-			console.log(data);
+			months.unshift("x");
 			var svg = d3.select("#"+name).append("svg")
 					.attr("id", "svg"+name)
-					.attr("width", w + margin.left + margin.right)
-					.attr("height", h + margin.top + margin.bottom)
+					.attr("width", w)
+					.attr("height", h)
 					.append("g")
-					.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-				
-			svg.append("text")             
-				  .attr("transform",
-						"translate(" + (w/2) + " ," + 
-									   (h + margin.top) + ")")
-				  .style("text-anchor", "middle")
-				  .text("Month");
-			
-			svg.append("text")
-				.attr("transform", "rotate(-90)")
-				  .attr("y", 0 - margin.left)
-				  .attr("x",0 - (h / 2))
-				  .attr("dy", "1em")
-				  .style("text-anchor", "middle")
-				  .text("Number of readings");     
-			
-			svg.append("g")
-				  .attr("transform", "translate(0," + h + ")")
-				  .call(d3.axisBottom(x));
-			
-			svg.append("g")
-			  .style("font","8px times")
-			  .call(d3.axisLeft(y))
-			var base = data;
-			var circlesGr = svg.selectAll(".circleGroups")
-								.data(base) 
-								.enter()
-								.append("g")
-								.attr("fill",function(d){return z(d.key)})
-
-			var circles = circlesGr.selectAll(".circles")
-									.data(function(d){return d.values})
-									.enter()
-									.append("circle")
-									
-				circles.attr("r",2)
-						.attr("cx",function(d){return x(d.key)})
-						.attr("cy",function(d){return y(d.value)})
-			
-			var line = d3.line()
-						.x(function(d,i){return x(d.key)})
-						.y(function(d,i) {return y(d.value);})		
-			
-			var pathsGroup = svg.selectAll(".pathsGroup")
-								.data(base)
-								.enter()
-								.append("g")
-								.attr("fill","none")
-								.attr("stroke",function(d){console.log(d);return z(d.key)})
-						
-			var paths = pathsGroup.selectAll(".paths")
-									.data(function(d){return [d.values]})
-									.enter()
-									.append("path")
-									.attr("d",line)
-									.attr("class","line")
-									.attr("stroke-width",2)
-									.attr("id",function(d,i){return "line";})
-														
-							/*		o = d3.selectAll(".line")
-									o.each(function(d,i){
-										var totalLength = d3.select("#line").getTotalLength;
-										console.log(totalLength);
-										d3.selectAll("#line"+i).attr("stroke-dasharray", totalLength + " " + totalLength)
-																  .attr("stroke-dashoffset", totalLength)
-																  .transition()
-																  .duration(2000)
-									})	
-			/*	
-				d3.select.attr("stroke-dasharray",function(d){totalLength = x(d.length); return(totalLength + " " + totalLength)})
-						  .attr("stroke-dashoffset", 0)
-						  .transition()
-							.duration(2000)
-							.attr("stroke-dashoffset",totalLength)
-						*/	
-			var legendRect = 18;
-			var legendSpacing = 4;
-		
-			legend = svg.selectAll('.legend')                     
-			  .data([da0,da1,da2,da3,da4,da5,da6])                                
-			  .enter()                                                
-			  .append('g')                                            
-			  .attr('class', 'legend')                    
-			  .attr("transform", function(d,i){
-				  var height = legendRect + legendSpacing;
-				  var offset = height * 2 / 2;
-				  var horz = -2 * legendRect;
-				  var vert = i * height -offset;
-				  return "translate("+ (w - 80)+","+ vert +")";
-			  });
-			  
-			 legend.append("rect")
-				.attr("width",20)
-				.attr("height",20)
-				.style("fill", function(d){return z(d[0].type)})
-				
-			legend.append("text")
-				.attr("x", 25)
-				.attr("y", 15)
-				.text(function(d) {return d[0].type})
+					.attr("transform", "translate(" + margin.left  + "," + margin.top + ")");
+			var chart = bb.generate({
+				  data: {
+					x: "x",
+					columns: [
+					["x", "2015-05-01", "2015-06-01", "2015-07-01", "2015-08-01", "2015-09-01", "2015-10-01","2015-11-01","2015-12-01","2016-01-01",
+					"2016-02-01","2016-03-01","2016-04-01","2016-05-01"],
+					line0,line1,line2,line3,line4,line5,line6
+					]
+				  },
+				  axis: {
+					x: {
+					  type: "timeseries",
+					  tick: {
+						format: "%y-%m"
+					  }
+					}
+				  },
+				   title: {text: "Readings per vehicle type per month",
+						 padding: {
+							 top: 10,
+							 bottom: 10,
+						 },
+						 position: "top-center"
+					 },
+				  bindto: "#svg"+name
+				});
   }							
 
 function vt(){
@@ -1219,26 +1225,139 @@ function timeroni(name){
 						.entries(ordered);
 			console.log(ordered1);
 			console.log(ordered1[0].key == ordered1[1].key);
-			
-			var a = ordered1.filter(function(d){if (d.key > ordered[0].key) {return d;}});
-			console.log(base);
-			//il filtro così funziona, puoi fare una select in base al pezzo di grafico dove arrivi e filtri così ma dovrai fare sempre il force graph			
-			/*
-			fai a filtri, "primavera(2015)/estate/autunno/inverno/primavera(2016"
-			primavera 1º marzo - 31 maggio
-			estate (giugno - 31 agosto)
-			autunno (settembre - 30 novembre)
-			inverno (dicembre-29 febb)
-			evidenzia anche nel grafico, tipo "se filtro primavera allora tutta la linea diventa trasparente"
-			*/
+			mLabels = ["15-05-31","15-06-30","15-07-31","15-08-31","15-09-30","15-10-31","15-11-30","15-12-31","16-01-31","16-02-29","16-03-31","16-04-30","16-05-31"]
+			months = [];
+			j = ordered1.filter(function(d){if (d.key <= mLabels[0] ) {return d;}});   
+			months.push(j);
+			for(i=1;i<mLabels.length;i++){
+				obj = ordered1.filter(function(d){if ((d.key <= mLabels[i]) && (d.key > mLabels[i-1])) {return d;}});
+				months.push(obj);
+			}
+			console.log("months",months);
+			mag = "15-05-31"
+			var maggio = ordered1.filter(function(d){if (d.key <= mag ) {return d;}});
+			console.log("lunghezza maggio",mag.length); // usa quest per fare le distanze 
+			ago = "15-08-31" // maggio < x < estate 
+			var estate = ordered1.filter(function(d){if ((mag < d.key) && (d.key <= ago) ) {return d;}});
+			console.log("estate",estate);
+			nov = "15-11-30"
+			var autunno = ordered1.filter(function(d){if ((ago < d.key) && (d.key <= nov) ) {return d;}});
+			console.log("autunno",autunno);
+			febb = "16-02-29"
+			var inverno = ordered1.filter(function(d){if ((nov < d.key) && (d.key <= febb) ) {return d;}});
+			console.log("inv",inverno);
+			mag16 = "16-05-31"
+			var primav16 = ordered1.filter(function(d){if ((febb < d.key) && (d.key <= mag16) ) {return d;}});
+			console.log("primavera",primav16);
+
+			filterBarW = 0;
+			var filters = ["Season","Month","Week"]
+			var filter = "Season";
+			var seasons = ["Spring (2015)","Summer","Autumn","Winter","Spring (2016)"]
 			
 			var div = d3.select("#container").append("div").attr("id",name).attr("class","mainClass");
-			document.getElementById(name).style.width="60%";
-			document.getElementById(name).style.height="70%";
+			document.getElementById(name).style.width="100%";
+			document.getElementById(name).style.height="50%";
 			var h = document.getElementById(name).clientHeight;
 			var w = document.getElementById(name).offsetWidth;
 			    w = w - margin.left - margin.right;
-				h = h - margin.top - margin.bottom;
+				h = h - margin.bottom - margin.top - 40;	
+			
+			var s = d3.select('#'+name)
+						.append('select')
+						.attr("id","sel")
+						.attr('class','select')
+						.style("float","right")
+						.style("margin-top","20px")
+						.style("margin-left","20px")
+						.style("margin-right","20px")
+						.on('change',onchange)
+			var counter = 0;
+			var next = d3.select("#"+name)
+							.append("span")
+							.style("float","right")
+							.append("input")
+							.attr("class","filterButton")
+							.style("margin","auto")
+							.style("display","block")
+							.style("background-color","#38B6FF")
+							.style("border","none")
+							.style("margin-top","20px")
+							.style("margin-right","20px")
+							.style("color","white")
+							.style("float","left")
+							.attr("type","button")
+							.attr("value",'\u00BB') 
+							.on("click",function() {counter = counter + 1;
+													move("next",counter,w)
+													d3.select("#now").text(function(){if(filter == "Season"){
+														return seasons[counter]}})
+							}) 
+			
+			var now = d3.select("#"+name)
+							.append("span")
+							.style("float","right")
+							.append("span")
+							.attr("class","filterButton")
+							.attr("id","now")
+							.style("margin","auto")
+							.style("display","block")
+							.style("background-color","#38B6FF")
+							.style("border","none")
+							.style("margin-top","20px")
+							.style("margin-left","2px")
+							.style("margin-right","2px")
+							.style("color","white")
+							.style("float","left")
+							.text(function(){if(filter == "Season"){
+														return seasons[counter]}}) 
+			
+			var prev = d3.select("#"+name)
+							.append("span")
+							.style("float","right")
+							.append("input")
+							.attr("class","filterButton")
+							.attr("width",w/100)
+							.style("margin","auto")
+							.style("display","block")
+							.style("background-color","#38B6FF")
+							.style("border","none")
+							.style("margin-top","20px")
+							.style("margin-left","20px")
+							.style("color","white")
+							.style("float","left")
+							.attr("type","button")
+							.attr("value",'\u00AB ') 
+							.on("click",function() {counter = counter - 1;
+													move("prev",counter,w)
+													d3.select("#now").text(function(){if(filter == "Season"){
+														return seasons[counter]}})})
+							
+			var options = s
+				  .selectAll('option')
+					.data(filters)
+					.enter()
+					.append('option')
+						.text(function (d) { return d})
+						.property("selected", function(d){return d == filter});
+
+			function onchange(){
+				s = document.getElementById("sel")
+				selectValue= ""+s[s.selectedIndex].value;
+				counter = 0;
+				filter = selectValue;
+				if(selectValue == "Season"){     //durata stagione approssimata a 90 giorni, oppure fai un if per ogni stagione (fallo con estate.length, meglio)
+				filterBarW = x(90) - x(0);	       //probabilemnte dovrai cambiare qualcosa quando metti il fatto che si sposta la barretta
+				} else if (selectValue == "Month") { //tipo il fatto che il mese selezionato(indici? 0 maggio, 1 giugno...) determinerà direttamente la lunghezza
+					filterBarW = x(31) - x(0);		//con maggio.length;
+				} else if (selectValue == "Week") {
+					filterBarW = x(7) - x(0);
+				}
+				bar = d3.select("#filterBar").attr("width",filterBarW)
+				console.log(filterBarW);
+			}
+			
+			
 			var max = d3.max(ordered1,function(d){return d.values.length;});
 			//console.log(max);
 			
@@ -1246,11 +1365,14 @@ function timeroni(name){
 			y = d3.scaleLinear().range([h,0]);
 			x.domain([0,ordered1.length]);
 			y.domain(d3.extent(ordered1, function(d) {return d.values.length;}));
+			
 			var xAxis = d3.axisBottom(x);
 			var yAxis = d3.axisLeft(y);
 			var line = d3.line()
 						.x(function(d,i) {return x(i);})
 						.y(function(d) {return y(d.values.length);})			
+			
+			filterBarW = x(90) - x(0)
 			
 			var svg = d3.select("#"+name).append("svg")
 					.attr("id", "svg"+name)
@@ -1263,13 +1385,30 @@ function timeroni(name){
 				  .attr("transform", "translate(0," + h + ")")
 				  .call(d3.axisBottom(x));
 
+			svg.append("rect")
+				.attr("transform","translate(0,"+h+")")
+				.attr("id","filterBar")
+				.attr("width", filterBarW)
+				.attr("height",10)
+				.attr("fill","gray")
+				.attr("opacity","0.3")
+			
+/*			svg.append("g")
+				.append("span")
+				.append("p")
+				.append("i")
+				.attr("transform","translate(0,"+h+")")
+				.attr("class","arrowRight")
+*/				
+			
 			  // text label for the x axis
 			svg.append("text")             
 				  .attr("transform",
 						"translate(" + (w/2) + " ," + 
 									   (h + margin.top) + ")")
 				  .style("text-anchor", "middle")
-				  .text("Day");
+				  .text("Day")
+				 
 			
 			 // Add the y Axis
 			svg.append("g")
@@ -1299,8 +1438,33 @@ function timeroni(name){
 				  .transition()
 					.duration(2000)
 					.attr("stroke-dashoffset", 0);	
-	});
+		// se ti servono i dati fai così le funzioni, aggiungi filtri per "stagione"/"mese singolo"/"settimana"
+		
+		function details(n){
+			var div = d3.select("#container").append("div").attr("id",n).attr("class","mainClass");
+			document.getElementById(n).style.width="100%";
+			document.getElementById(n).style.height="59%";
+			var h = document.getElementById(n).clientHeight;
+			var w = document.getElementById(n).offsetWidth;
+			    w = w - margin.left - margin.right;
+				h = h - margin.top - margin.bottom;
+			
+
+		}
+		details("aux1");
+		
+		});
 }
-	
+
+var rectWidth = 0;
+
+function move(but,counter,length){ //se next, counter +1, se prev, counter -1
+	rect = document.getElementById("filterBar")
+	console.log(length);
+	//	rect.setAttribute("x", 150);
+    el = rect.getBoundingClientRect();
+	console.log(rect.getBoundingClientRect());
+	rect.setAttribute("x", el.width * counter) 
+}	
 
 
