@@ -179,12 +179,7 @@ function scatter(name,filter,auxName){   //pie chart "comanda"quello che viene v
 									   (h + margin.top) + ")")
 				  .style("text-anchor", "middle")
 				  .text("Vehicle");
-//rimuovi anche il tooltip, info verranno messe in un altra finestra 
-/*		
-			var tooldiv = d3.select("#"+name).append("div")
-							.attr("class","scatterTooltip")
-							.style("opacity",0)
-	*/		
+				  
 			 // Add the y Axis
 			svg.append("g")
 				.attr("class","y")
@@ -207,34 +202,6 @@ function scatter(name,filter,auxName){   //pie chart "comanda"quello che viene v
 					.attr("cy", function (d,i) {return y(d.sum);} )
 					.attr("r", 2)
 					.attr("fill", "lightgray")
-					//.attr("fill","black")//function(d){if (d.car == "2P") {return "#EC9787"} else {return "steelblue"}}) colori sono comandati da pie
-			/*			.on("mouseover", function(d){ 	d3.select(this).moveToFront();
-														d3.select(this)
-															.transition()
-															.duration(500)
-															.style("r",12)
-															.attr("stroke","black")
-															.attr("stroke-width",6)
-													    tooldiv.transition().duration(500).style("opacity",.9);
-														if(d.days.length > 5){
-															tooldiv.style("width","400px")
-														} else {
-															tooldiv.style("width","80px")
-														}
-												
-														tooldiv.selectAll("text")
-														               .data(d.days)
-																	   .enter()
-																	   .append("span")
-																	   .text(function(d) {return d+", "})
-	
-														tooldiv.style("left", (d3.event.pageX + 15) + "px")
-																.style("top", (d3.event.pageY - 40) +"px")
-														})
-						.on("mouseout", function(d) { d3.select(this).transition().duration(500).style("r",2).attr("stroke-width",0)})
-													tooldiv.transition().duration(500).style("opacity",0).style("width","80px")
-														tooldiv.selectAll("span").remove()}) */
-				
 						
 		function onchange() {
 			s = document.getElementById("sel")
@@ -291,34 +258,7 @@ function scatter(name,filter,auxName){   //pie chart "comanda"quello che viene v
 						.attr("cy", function (d,i) {return y(d.sum);} )
 						.attr("r", function(d) {if (filter == "3 or more Days") {return 4.6} else {return 2}}) //non so perchè non va
 						.attr("fill", "lightgray")
-						//.attr("fill",function(d){if (d.car == "2P") {return "#EC9787"} else {return "steelblue"}})
-		/*					.on("mouseover", function(d){ d3.select(this).moveToFront();
-															d3.select(this)
-															.transition()
-															.duration(500)
-															.style("r",12)
-															.attr("stroke","black")
-															.attr("stroke-width",6)
-													    tooldiv.transition().duration(200).style("opacity",.9);
-														if(d.days.length > 5){
-															tooldiv.style("width","400px")
-														} else {
-															tooldiv.style("width","80px")
-														}
-														
-														tooldiv.selectAll("text")
-														               .data(d.days)
-																	   .enter()
-																	   .append("span")
-																	   .text(function(d) {return d+", "})
-																	   
-														tooldiv.style("left", (d3.event.pageX + 15) + "px")
-																.style("top", (d3.event.pageY - 40) +"px")
-														})
-						.on("mouseout", function(d) { d3.select(this).transition().duration(500).style("r",2).attr("stroke-width",0)
-														tooldiv.transition().duration(500).style("opacity",0).style("width","80px")
-														tooldiv.selectAll("span").remove()})			
-			*/				
+
 					svg.select(".x")
 						.transition()
 						.duration(1000)
@@ -371,7 +311,7 @@ function scatter(name,filter,auxName){   //pie chart "comanda"quello che viene v
 					}
 	
     var chart = gauge("aux1",ordered);	}
-	)}        //problemi con hid, se nascondi e hai già schiacciato e quindi sono colorate e rischiacci viene fuori grigio.
+	)}        
 
 function timeBB(name,data){ //problemi col fare le cose, forse è inutile? idee?
 			var ordered = d3.nest()
@@ -1155,6 +1095,7 @@ function multiLine(data,name) { // va bene, vedi se aggiungere qualcosa tipo l'i
 					.attr("height", h)
 					.append("g")
 					.attr("transform", "translate(" + margin.left  + "," + margin.top + ")");
+		
 			var chart = bb.generate({
 				  data: {
 					x: "x",
@@ -1162,9 +1103,45 @@ function multiLine(data,name) { // va bene, vedi se aggiungere qualcosa tipo l'i
 					["x", "2015-05-01", "2015-06-01", "2015-07-01", "2015-08-01", "2015-09-01", "2015-10-01","2015-11-01","2015-12-01","2016-01-01",
 					"2016-02-01","2016-03-01","2016-04-01","2016-05-01"],
 					line0,line1,line2,line3,line4,line5,line6
-					]
+					],
+				  onclick: function(d, i) { if(clicked == false) {
+								clicked = true;
+								d3.csv("Lekagul Sensor Data.csv").then(function(data){
+								m = ["Maggio 2015","Giugno","Luglio","Settembre","Ottobre","Novembre","Dicembre","Gennaio","Febbraio","Marzo","Aprile","Maggio 2016"]
+								console.log(m[d.index])
+								dat = filterData(data, m[d.index]);
+								console.log(d,d.index,dat);
+								c = g.data() //prende i dati dell'altro, funziona, puoi modificare le cose così
+								  var parseTime = d3.timeParse("%Y-%m-%d");
+									var format = d3.timeFormat("%a");
+									dat.forEach(function(d,i) {   
+										var time = parseTime(d.Timestamp);
+										d.Timestamp = format(time);
+										})
+								  var ordered = d3.nest()
+									.key(function(d){return d['car-type'];})
+									.key(function(d){return d["Timestamp"];})
+									.entries(dat)
+									console.log(ordered);
+									map = {"Mon": 1, "Tue":2, "Wed":3, "Thu":4,"Fri":5, "Sat":6, "Sun":7}
+									days = [0,0,0,0,0,0,0];
+									matrix = [];
+									console.log(arr[map[ordered[0].values[0].key]]);
+									for(i=0;i<ordered.length;i++){
+										arr = [ordered[i].key,0,0,0,0,0,0,0];
+										for(j=0;j<ordered[i].values.length;j++){
+											days[map[ordered[i].values[j].key]] = ordered[i].values[j].key //ordered[i].values[j].values.length] 
+											arr[map[ordered[i].values[j].key]] = ordered[i].values[j].values.length;
+										}
+										matrix.push(arr);
+									}
+									setTimeout(function() {g.unload();},1000);	
+									setTimeout(function() {g.load({columns:matrix});clicked = false;},1500)
+										})								
+									}
+				  }
 				  },
-				  axis: {
+				axis: {
 					x: {
 					  type: "timeseries",
 					  tick: {
@@ -1179,10 +1156,137 @@ function multiLine(data,name) { // va bene, vedi se aggiungere qualcosa tipo l'i
 						 },
 						 position: "top-center"
 					 },
+					legend: {
+						item: {onclick: function (d) {chart.toggle(d);g.toggle(d);
+														console.log("ciaone")}}
+					},
 				  bindto: "#svg"+name
 				});
+	d3.csv("Lekagul Sensor Data.csv").then(function(data){
+			var parseTime = d3.timeParse("%Y-%m-%d %H:%M:%S");
+			var format = d3.timeFormat("%a");
+			data.forEach(function(d,i) {   
+				var time = parseTime(d.Timestamp);
+				d.Timestamp = format(time);
+				})
+			console.log(data);
+		    var ordered = d3.nest()
+					.key(function(d){return d['car-type'];})
+					.key(function(d){return d["Timestamp"];})
+					.entries(data)
+		console.log(ordered);
+		map = {"Mon": 1, "Tue":2, "Wed":3, "Thu":4,"Fri":5, "Sat":6, "Sun":7}
+		days = [0,0,0,0,0,0,0];
+		matrix = [];
+		console.log(arr[map[ordered[0].values[0].key]]);
+		for(i=0;i<ordered.length;i++){
+			arr = [ordered[i].key,0,0,0,0,0,0,0];
+			for(j=0;j<ordered[i].values.length;j++){
+				days[map[ordered[i].values[j].key]] = ordered[i].values[j].key //ordered[i].values[j].values.length] 
+				arr[map[ordered[i].values[j].key]] = ordered[i].values[j].values.length;
+			}
+			matrix.push(arr);
+		}
+		console.log(matrix);
+		g = weekDays(matrix,data,"aux1");
+	 })
   }							
+var clicked = false;
+function filterData(data,month){
+			var parseTime = d3.timeParse("%Y-%m-%d %H:%M:%S");
+			var format = d3.timeFormat("%Y-%m-%d");
+			data.forEach(function(d,i) {   
+				var time = parseTime(d.Timestamp);
+				d.Timestamp = format(time);
+				})
+			console.log(data);
+			if(month == "Maggio 2015"){
+				data = data.filter(function(d) {if (d.Timestamp < "2015-05-31") {return d}})
+			} else if (month == "Giugno") {
+				data = data.filter(function(d) {if ((d.Timestamp > "2015-05-31") && (d.Timestamp < "2015-06-31"))  {return d}})
+			} else if (month == "Luglio"){
+				data = data.filter(function(d) {if ((d.Timestamp > "2015-06-31")&& (d.Timestamp < "2015-07-31")) {return d}})
+			} else if (month == "Agosto"){
+				data = data.filter(function(d) {if ((d.Timestamp > "2015-07-31")&& (d.Timestamp < "2015-08-31")) {return d}})
+			} else if (month == "Settembre"){
+				data = data.filter(function(d) {if ((d.Timestamp > "2015-08-31")&& (d.Timestamp < "2015-09-31")) {return d}})
+			} else if (month == "Ottobre"){
+				data = data.filter(function(d) {if ((d.Timestamp > "2015-09-31")&& (d.Timestamp < "2015-10-31")) {return d}})
+			} else if (month == "Novembre"){
+				data = data.filter(function(d) {if ((d.Timestamp > "2015-10-31")&& (d.Timestamp < "2015-11-31")) {return d}})
+			} else if (month == "Dicembre"){
+				data = data.filter(function(d) {if ((d.Timestamp > "2015-11-31")&& (d.Timestamp < "2015-12-31")) {return d}})
+			} else if (month == "Gennaio"){
+				data = data.filter(function(d) {if ((d.Timestamp > "2015-12-31")&& (d.Timestamp < "2016-01-31")) {return d}})
+			} else if (month == "Febbraio"){
+				data = data.filter(function(d) {if ((d.Timestamp > "2016-01-31")&& (d.Timestamp < "2016-02-31")) {return d}})
+			} else if (month == "Marzo"){
+				data = data.filter(function(d) {if ((d.Timestamp > "2016-02-31")&& (d.Timestamp < "2016-03-31")) {return d}})
+			} else if (month == "Aprile"){
+				data = data.filter(function(d) {if ((d.Timestamp > "2016-03-31")&& (d.Timestamp < "2016-04-31")) {return d}})
+			} else if (month == "Maggio 2016"){
+				data = data.filter(function(d) {if ((d.Timestamp > "2016-04-31")&& (d.Timestamp < "2016-05-31")) {return d}})
+			}
+		return data;
+}
+  
+function weekDays(data,raw,name) {
+	var div = d3.select("#container").append("div").attr("id",name).attr("class","aux1");
+			document.getElementById(name).style.width="39%";
+			document.getElementById(name).style.height="60%";
+			document.getElementById(name).style.float="right";
+	var h = document.getElementById(name).clientHeight;
+	var w = document.getElementById(name).offsetWidth;
+	    w = w - margin.right ;
+		h = h + margin.top - 10 - margin.bottom;		
+    
+	var d = d3.select("#"+name).append("svg")
+			.attr("width", w)
+			.attr("height", h)
+			.attr("id","svg"+name)
+			.style("float","left")
+			.append("g")
+			.attr("transform", "translate(" + w / 2 + "," + h/2 + ")");
+  //capisci bene come è da organizzare i dati per rappresnetare nella chart i giorni della settimana con sopra "stacked type of vehicle"
+	  //se uno clicca da una parte o dall'altra, viene tutto nascosto in entrambi i grafici.
+	console.log(matrix);
 
+	var chart = bb.generate({
+  data: {
+	columns: data,
+    type: "bar",
+	groups: [
+	//	["4","2P","1","2","3","4","5","6"] //non so se è meglio così (stacked) o uno affianco all'altro
+	]
+  },
+  tooltip: {
+	  show: false,
+  },
+    axis: {
+		x: {
+		  type: "category",
+		  categories: [
+			"Mon",
+			"Tue",
+			"Wed",
+			"Thu",
+			"Fri",
+			"Sat",
+			"Sun"]
+		},
+	},
+	title: {text: "Readings per day of the week",
+						 padding: {
+							 top: 10,
+							 bottom: 10,
+						 },
+						 position: "top-center"
+					 },
+  bindto: "#svg"+name
+});
+return chart;
+}	
+ 
 function vt(){
 	main = document.getElementById("main");
 	if(!!main){
