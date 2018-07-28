@@ -585,14 +585,11 @@ function onchange() {
 function pieroni(array,name,title){ 
 	var div = d3.select("#container").append("div").attr("id",name).attr("class",name).style("font-size","12px");
 				document.getElementById(name).style.float="right";
-				
-	console.log(array);
 	var h = document.getElementById(name).clientHeight;
 	var w = document.getElementById(name).offsetWidth;
 	    w = w + margin.left - margin.right;
 		h = h + margin.top - 10 - margin.bottom;		
     radius = Math.min(w, h) / 2;
-	console.log(array);
 	var svg = d3.select("#"+name).append("svg")
 			.attr("width", w)
 			.attr("height", h)
@@ -655,7 +652,6 @@ function auxBar(data,name,filter){
 				obj = {"key":data[j].key,"percent":data[j].values.length};
 				arr.push(obj);
 			}
-			console.log(max,arr);
 			pieroni(arr,"aux1","% of traffic per \n vehicle type");
 			
 			var div = d3.select("#container").append("div").attr("id",name).attr("class","mainClass");
@@ -1107,10 +1103,8 @@ function multiLine(data,name) { // va bene, vedi se aggiungere qualcosa tipo l'i
 				  onclick: function(d, i) { if(clicked == false) {
 								clicked = true;
 								d3.csv("Lekagul Sensor Data.csv").then(function(data){
-								m = ["Maggio 2015","Giugno","Luglio","Settembre","Ottobre","Novembre","Dicembre","Gennaio","Febbraio","Marzo","Aprile","Maggio 2016"]
-								console.log(m[d.index])
+								m = ["Maggio 2015","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre","Gennaio","Febbraio","Marzo","Aprile","Maggio 2016"]
 								dat = filterData(data, m[d.index]);
-								console.log(d,d.index,dat);
 								c = g.data() //prende i dati dell'altro, funziona, puoi modificare le cose così
 								  var parseTime = d3.timeParse("%Y-%m-%d");
 									var format = d3.timeFormat("%a");
@@ -1122,11 +1116,9 @@ function multiLine(data,name) { // va bene, vedi se aggiungere qualcosa tipo l'i
 									.key(function(d){return d['car-type'];})
 									.key(function(d){return d["Timestamp"];})
 									.entries(dat)
-									console.log(ordered);
 									map = {"Mon": 1, "Tue":2, "Wed":3, "Thu":4,"Fri":5, "Sat":6, "Sun":7}
 									days = [0,0,0,0,0,0,0];
 									matrix = [];
-									console.log(arr[map[ordered[0].values[0].key]]);
 									for(i=0;i<ordered.length;i++){
 										arr = [ordered[i].key,0,0,0,0,0,0,0];
 										for(j=0;j<ordered[i].values.length;j++){
@@ -1134,8 +1126,9 @@ function multiLine(data,name) { // va bene, vedi se aggiungere qualcosa tipo l'i
 											arr[map[ordered[i].values[j].key]] = ordered[i].values[j].values.length;
 										}
 										matrix.push(arr);
-									}
-									setTimeout(function() {g.unload();},1000);	
+										}
+									gateWeek(m[d.index],"aux2");// prendi gate bar e copiacela dentro che è meglio prolly
+									setTimeout(function() {g.unload();	d3.select("#Month").text("Readings per day of the week (" + m[d.index] + ")");},1000);	
 									setTimeout(function() {g.load({columns:matrix});clicked = false;},1500)
 										})								
 									}
@@ -1145,7 +1138,7 @@ function multiLine(data,name) { // va bene, vedi se aggiungere qualcosa tipo l'i
 					x: {
 					  type: "timeseries",
 					  tick: {
-						format: "%y-%m"
+						format: "%m-%y"
 					  }
 					}
 				  },
@@ -1157,8 +1150,7 @@ function multiLine(data,name) { // va bene, vedi se aggiungere qualcosa tipo l'i
 						 position: "top-center"
 					 },
 					legend: {
-						item: {onclick: function (d) {chart.toggle(d);g.toggle(d);
-														console.log("ciaone")}}
+						item: {onclick: function (d) {chart.toggle(d);g.toggle(d);}}
 					},
 				  bindto: "#svg"+name
 				});
@@ -1169,12 +1161,10 @@ function multiLine(data,name) { // va bene, vedi se aggiungere qualcosa tipo l'i
 				var time = parseTime(d.Timestamp);
 				d.Timestamp = format(time);
 				})
-			console.log(data);
 		    var ordered = d3.nest()
 					.key(function(d){return d['car-type'];})
 					.key(function(d){return d["Timestamp"];})
 					.entries(data)
-		console.log(ordered);
 		map = {"Mon": 1, "Tue":2, "Wed":3, "Thu":4,"Fri":5, "Sat":6, "Sun":7}
 		days = [0,0,0,0,0,0,0];
 		matrix = [];
@@ -1187,8 +1177,7 @@ function multiLine(data,name) { // va bene, vedi se aggiungere qualcosa tipo l'i
 			}
 			matrix.push(arr);
 		}
-		console.log(matrix);
-		g = weekDays(matrix,data,"aux1");
+		g = weekDays(matrix,data,"aux1","General");
 	 })
   }							
 var clicked = false;
@@ -1199,7 +1188,6 @@ function filterData(data,month){
 				var time = parseTime(d.Timestamp);
 				d.Timestamp = format(time);
 				})
-			console.log(data);
 			if(month == "Maggio 2015"){
 				data = data.filter(function(d) {if (d.Timestamp < "2015-05-31") {return d}})
 			} else if (month == "Giugno") {
@@ -1230,7 +1218,7 @@ function filterData(data,month){
 		return data;
 }
   
-function weekDays(data,raw,name) {
+function weekDays(data,raw,name,filter) {
 	var div = d3.select("#container").append("div").attr("id",name).attr("class","aux1");
 			document.getElementById(name).style.width="39%";
 			document.getElementById(name).style.height="60%";
@@ -1240,6 +1228,15 @@ function weekDays(data,raw,name) {
 	    w = w - margin.right ;
 		h = h + margin.top - 10 - margin.bottom;		
     
+	d3.select("#"+name).append("div")
+					.style("text-align", "center")
+					.style("vertical-align", "middle")
+					.append("text")
+					.attr("id","Month")
+					.style("font-size","12px")
+					.style("text-anchor","middle")
+					.text(function(){return "Readings per day of the week (" + filter + ")"}) 
+	
 	var d = d3.select("#"+name).append("svg")
 			.attr("width", w)
 			.attr("height", h)
@@ -1275,18 +1272,101 @@ function weekDays(data,raw,name) {
 			"Sun"]
 		},
 	},
-	title: {text: "Readings per day of the week",
+	/*title: {text: "Readings per day of the week",
 						 padding: {
 							 top: 10,
 							 bottom: 10,
 						 },
 						 position: "top-center"
-					 },
+					 }, */
   bindto: "#svg"+name
 });
 return chart;
 }	
+
+function gateWeek(month,name){
+	var margin = {top: 40, right: 20, bottom: 120, left: 80};
+	
+	var div = d3.select("#container").append("div").attr("id",name).attr("class","gatebar");
+			
+	d3.csv("Lekagul Sensor Data.csv").then(function(data){ 
+			var filtered; 
+			data = filterData(data,month);
+			gates = d3.nest()
+					.key(function(d){return d['gate-name'];})
+		//			.key(function(d){return d['car-type'];})
+					.entries(data)
+					
+			filtered = d3.nest()
+					.key(function(d){return d['gate-name'];})
+					.key(function(d){return d['car-type'];})
+					.entries(data)
+					
+			gates.sort(function(a, b){ return d3.descending(a.values, b.values);});	
+			console.log("f",filtered,"g",gates) 
+			//pensa come usare i due array per fare le cose
+
+			
+			var h = document.getElementById(name).clientHeight;
+			var w = document.getElementById(name).offsetWidth;
+					w = w - margin.left - margin.right;
+					h = h;
+			//devi farlo con billboard così quando uno toglie le cose dalla legenda del line chart si tolgono anche qui le macchine.
+			values = new Array(filtered.length).fill(0);
+			for(i=0;i<filtered.length;i++){
+				arr = [];
+				for(j=0;j<filtered[i].values.length;j++){
+					arr.push(filtered[i].values[j].length);
+				}
+			}
+			
+			//prendi i dati in base all'indice selezoinato, sortali (fa già sopra)  e poi usa questo for per prendere i domini dei gates,
+			//per i valori genera una map in base all'array che hai creato e usa quella per riorganizzare l'array di valori ordinato come i gates
+			ga = [];
+			for(i=0;i<gates.length;i++){
+				ga.push(gates[i].key);
+			}
+			console.log(name);
+			var d = d3.select("#"+name).append("svg")
+				.attr("width", w)
+				.attr("height", h)
+				.attr("id","svg"+name)
+				.style("float","left")
+				.append("g")
+				.attr("transform", "translate(" + w / 2 + "," + h/2 + ")");
+				
+			var chart = bb.generate({
+					  data: {
+						columns: [[1,2,3,]],
+						type: "bar",
+						groups: [
+						//	["4","2P","1","2","3","4","5","6"] //non so se è meglio così (stacked) o uno affianco all'altro
+						]
+					  },
+					  tooltip: {
+						  show: false,
+					  },
+					   axis: {
+							x: {
+							  type: "category",
+							  categories: ga
+							},
+						},
+						/*title: {text: "Readings per day of the week",
+											 padding: {
+												 top: 10,
+												 bottom: 10,
+											 },
+											 position: "top-center"
+										 }, */
+					  bindto: "#svg"+name
+					});
+			
+})
+}	
+
  
+
 function vt(){
 	main = document.getElementById("main");
 	if(!!main){
@@ -1305,12 +1385,10 @@ function vtime(){
 
 function timeroni(name){
 	d3.csv("Lekagul Sensor Data.csv").then(function(data){
-			var base = data;
+			base = data;
 			var ordered = d3.nest()
 					.key(function(d){return d['Timestamp'];})
-					.entries(data);
-		///	console.log(ordered);
-			
+					.entries(data);			
 			var date = "2015-05-01 08:32:09"
 			var parseTime = d3.timeParse("%Y-%m-%d %H:%M:%S");
 			var c = parseTime(date);
@@ -1321,14 +1399,10 @@ function timeroni(name){
 				var time = parseTime(d.key);
 				d.key = format(time);
 				})
-			
-			
-			
 			var ordered1 = d3.nest()
 						.key(function(d){return d['key'];})
 						.entries(ordered);
-			console.log(ordered1);
-			console.log(ordered1[0].key == ordered1[1].key);
+			console.log("ciaoo",ordered1);
 			mLabels = ["15-05-31","15-06-30","15-07-31","15-08-31","15-09-30","15-10-31","15-11-30","15-12-31","16-01-31","16-02-29","16-03-31","16-04-30","16-05-31"]
 			months = [];
 			j = ordered1.filter(function(d){if (d.key <= mLabels[0] ) {return d;}});   
@@ -1337,238 +1411,58 @@ function timeroni(name){
 				obj = ordered1.filter(function(d){if ((d.key <= mLabels[i]) && (d.key > mLabels[i-1])) {return d;}});
 				months.push(obj);
 			}
-			console.log("months",months);
-			mag = "15-05-31"
-			var maggio = ordered1.filter(function(d){if (d.key <= mag ) {return d;}});
-			console.log("lunghezza maggio",mag.length); // usa quest per fare le distanze 
-			ago = "15-08-31" // maggio < x < estate 
-			var estate = ordered1.filter(function(d){if ((mag < d.key) && (d.key <= ago) ) {return d;}});
-			console.log("estate",estate);
-			nov = "15-11-30"
-			var autunno = ordered1.filter(function(d){if ((ago < d.key) && (d.key <= nov) ) {return d;}});
-			console.log("autunno",autunno);
-			febb = "16-02-29"
-			var inverno = ordered1.filter(function(d){if ((nov < d.key) && (d.key <= febb) ) {return d;}});
-			console.log("inv",inverno);
-			mag16 = "16-05-31"
-			var primav16 = ordered1.filter(function(d){if ((febb < d.key) && (d.key <= mag16) ) {return d;}});
-			console.log("primavera",primav16);
-
-			filterBarW = 0;
-			var filters = ["Season","Month","Week"]
-			var filter = "Season";
-			var seasons = ["Spring (2015)","Summer","Autumn","Winter","Spring (2016)"]
-			
+			xTicks = ["x"];
+			values = [];
+			for(i=0;i<ordered1.length;i++){
+				xTicks.push(ordered1[i].key);
+				values.push(ordered1[i].values.length);
+			}
+			console.log(xTicks,values);
 			var div = d3.select("#container").append("div").attr("id",name).attr("class","mainClass");
 			document.getElementById(name).style.width="100%";
-			document.getElementById(name).style.height="50%";
+			document.getElementById(name).style.height="60%";
+			document.getElementById(name).style.float="left";
 			var h = document.getElementById(name).clientHeight;
-			var w = document.getElementById(name).offsetWidth;
-			    w = w - margin.left - margin.right;
-				h = h - margin.bottom - margin.top - 40;	
-			
-			var s = d3.select('#'+name)
-						.append('select')
-						.attr("id","sel")
-						.attr('class','select')
-						.style("float","right")
-						.style("margin-top","20px")
-						.style("margin-left","20px")
-						.style("margin-right","20px")
-						.on('change',onchange)
-			var counter = 0;
-			var next = d3.select("#"+name)
-							.append("span")
-							.style("float","right")
-							.append("input")
-							.attr("class","filterButton")
-							.style("margin","auto")
-							.style("display","block")
-							.style("background-color","#38B6FF")
-							.style("border","none")
-							.style("margin-top","20px")
-							.style("margin-right","20px")
-							.style("color","white")
-							.style("float","left")
-							.attr("type","button")
-							.attr("value",'\u00BB') 
-							.on("click",function() {counter = counter + 1;
-													move("next",counter,w)
-													d3.select("#now").text(function(){if(filter == "Season"){
-														return seasons[counter]}})
-							}) 
-			
-			var now = d3.select("#"+name)
-							.append("span")
-							.style("float","right")
-							.append("span")
-							.attr("class","filterButton")
-							.attr("id","now")
-							.style("margin","auto")
-							.style("display","block")
-							.style("background-color","#38B6FF")
-							.style("border","none")
-							.style("margin-top","20px")
-							.style("margin-left","2px")
-							.style("margin-right","2px")
-							.style("color","white")
-							.style("float","left")
-							.text(function(){if(filter == "Season"){
-														return seasons[counter]}}) 
-			
-			var prev = d3.select("#"+name)
-							.append("span")
-							.style("float","right")
-							.append("input")
-							.attr("class","filterButton")
-							.attr("width",w/100)
-							.style("margin","auto")
-							.style("display","block")
-							.style("background-color","#38B6FF")
-							.style("border","none")
-							.style("margin-top","20px")
-							.style("margin-left","20px")
-							.style("color","white")
-							.style("float","left")
-							.attr("type","button")
-							.attr("value",'\u00AB ') 
-							.on("click",function() {counter = counter - 1;
-													move("prev",counter,w)
-													d3.select("#now").text(function(){if(filter == "Season"){
-														return seasons[counter]}})})
-							
-			var options = s
-				  .selectAll('option')
-					.data(filters)
-					.enter()
-					.append('option')
-						.text(function (d) { return d})
-						.property("selected", function(d){return d == filter});
-
-			function onchange(){
-				s = document.getElementById("sel")
-				selectValue= ""+s[s.selectedIndex].value;
-				counter = 0;
-				filter = selectValue;
-				if(selectValue == "Season"){     //durata stagione approssimata a 90 giorni, oppure fai un if per ogni stagione (fallo con estate.length, meglio)
-				filterBarW = x(90) - x(0);	       //probabilemnte dovrai cambiare qualcosa quando metti il fatto che si sposta la barretta
-				} else if (selectValue == "Month") { //tipo il fatto che il mese selezionato(indici? 0 maggio, 1 giugno...) determinerà direttamente la lunghezza
-					filterBarW = x(31) - x(0);		//con maggio.length;
-				} else if (selectValue == "Week") {
-					filterBarW = x(7) - x(0);
-				}
-				bar = d3.select("#filterBar").attr("width",filterBarW)
-				console.log(filterBarW);
-			}
-			
-			
-			var max = d3.max(ordered1,function(d){return d.values.length;});
-			//console.log(max);
-			
-			var x = d3.scaleLinear().range([0, w]), // w -marginright
-			y = d3.scaleLinear().range([h,0]);
-			x.domain([0,ordered1.length]);
-			y.domain(d3.extent(ordered1, function(d) {return d.values.length;}));
-			
-			var xAxis = d3.axisBottom(x);
-			var yAxis = d3.axisLeft(y);
-			var line = d3.line()
-						.x(function(d,i) {return x(i);})
-						.y(function(d) {return y(d.values.length);})			
-			
-			filterBarW = x(90) - x(0)
-			
+			var w = document.getElementById(name).offsetWidth - margin.right - 20;
 			var svg = d3.select("#"+name).append("svg")
 					.attr("id", "svg"+name)
-					.attr("width", w + margin.left + margin.right)
-					.attr("height", h + margin.top + margin.bottom)
+					.attr("width", w)
+					.attr("height", h)
 					.append("g")
-					.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-			
-			svg.append("g")
-				  .attr("transform", "translate(0," + h + ")")
-				  .call(d3.axisBottom(x));
-
-			svg.append("rect")
-				.attr("transform","translate(0,"+h+")")
-				.attr("id","filterBar")
-				.attr("width", filterBarW)
-				.attr("height",10)
-				.attr("fill","gray")
-				.attr("opacity","0.3")
-			
-/*			svg.append("g")
-				.append("span")
-				.append("p")
-				.append("i")
-				.attr("transform","translate(0,"+h+")")
-				.attr("class","arrowRight")
-*/				
-			
-			  // text label for the x axis
-			svg.append("text")             
-				  .attr("transform",
-						"translate(" + (w/2) + " ," + 
-									   (h + margin.top) + ")")
-				  .style("text-anchor", "middle")
-				  .text("Day")
-				 
-			
-			 // Add the y Axis
-			svg.append("g")
-				.call(d3.axisLeft(y));
-	
-			// text label for the y axis
-			svg.append("text")
-				.attr("transform", "rotate(-90)")
-				  .attr("y", 0 - margin.left)
-				  .attr("x",0 - (h / 2))
-				  .attr("dy", "1em")
-				  .style("text-anchor", "middle")
-				  .text("Traffic (# of readings)");
-			
-		var path = svg.append("path")
-				.datum(ordered1)
-				.attr("fill","none")
-				.attr("stroke", "steelblue")
-				.attr("class","line")
-				.attr("stroke-width",1.5)
-				.attr("d",line);
-		
-		var totalLength = path.node().getTotalLength();
-			
-			  path.attr("stroke-dasharray", totalLength + " " + totalLength)
-				  .attr("stroke-dashoffset", totalLength)
-				  .transition()
-					.duration(2000)
-					.attr("stroke-dashoffset", 0);	
-		// se ti servono i dati fai così le funzioni, aggiungi filtri per "stagione"/"mese singolo"/"settimana"
-		
-		function details(n){
-			var div = d3.select("#container").append("div").attr("id",n).attr("class","mainClass");
-			document.getElementById(n).style.width="100%";
-			document.getElementById(n).style.height="59%";
-			var h = document.getElementById(n).clientHeight;
-			var w = document.getElementById(n).offsetWidth;
-			    w = w - margin.left - margin.right;
-				h = h - margin.top - margin.bottom;
-			
-
-		}
-		details("aux1");
-		
-		});
+					.attr("transform", "translate(" + margin.left  + "," + margin.top + ")");
+	//		console.log("months",months); mesi singoli in array 
+			var chart = bb.generate({
+				  data: {
+					x: "x",
+					columns: [xTicks,values],
+				  },
+				axis: {
+					x: {
+					  type: "timeseries",
+					  tick: {
+							count: 13,
+							format: "%d-%m-%y",
+						}
+					}
+				  },
+				subchart: {
+					show:true,                         //USA QUESTO SUL TIME per calcolare il traffico e metterlo nel force graph!
+					onbrush: function(domain) { console.log(domain)},
+					size: {height: 20,}
+				},  
+				   title: {text: "Traffic readings",
+						 padding: {
+							 top: 10,
+							 bottom: 10,
+						 },
+						 position: "top-center"
+					 },
+					legend: {
+						show:false,
+					},
+				  bindto: "#svg"+name
+				});
+	});
 }
-
-var rectWidth = 0;
-
-function move(but,counter,length){ //se next, counter +1, se prev, counter -1
-	rect = document.getElementById("filterBar")
-	console.log(length);
-	//	rect.setAttribute("x", 150);
-    el = rect.getBoundingClientRect();
-	console.log(rect.getBoundingClientRect());
-	rect.setAttribute("x", el.width * counter) 
-}	
 
 
