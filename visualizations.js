@@ -407,7 +407,7 @@ function timeBB(name,data){ //problemi col fare le cose, forse è inutile? idee?
 		return ordered1;
 		};
 	
-function gauge(name,data){ 
+function gauge(name,data){  //scatter controller
 	console.log(data);
 	t2P = 0;
 	t1 = 0;
@@ -599,8 +599,8 @@ function pieroni(array,name,title){
 			.attr("transform", "translate(" + w / 2 + "," + h/2 + ")");
 		
 		cols = [];
-		for(i=0;i<arr.length;i++){
-			a = [arr[i].key,arr[i].percent];
+		for(i=0;i<array.length;i++){
+			a = [array[i].key,array[i].percent];
 			cols.push(a);
 		}
 		var chart = bb.generate({
@@ -874,6 +874,7 @@ function gateBar(key,filter){
 			var canvas = d3.select("#gatebar").append("svg")       //occhio che hai dato nomi non portabili
 					.attr("width", w + margin.left + margin.right)
 					.attr("height", h + margin.top + margin.bottom)
+					.attr("height", h + margin.top + margin.bottom)
 					.attr("id", "svgmain")
 					.append("g")
 					.attr("transform", "translate(" + margin.left  + "," + margin.top + ")");
@@ -1017,7 +1018,7 @@ function gateBar(key,filter){
 function multiLine(data,name) { // va bene, vedi se aggiungere qualcosa tipo l'istogramma per veicolo per giorno della settimana
 			var div = d3.select("#container").append("div").attr("id",name).attr("class","mainClass");
 			document.getElementById(name).style.width="60%";
-			document.getElementById(name).style.height="60%";
+			document.getElementById(name).style.height="98%";
 			document.getElementById(name).style.float="left";
 			var h = document.getElementById(name).clientHeight;
 			var w = document.getElementById(name).offsetWidth - margin.right - 20;
@@ -1127,7 +1128,47 @@ function multiLine(data,name) { // va bene, vedi se aggiungere qualcosa tipo l'i
 										}
 										matrix.push(arr);
 										}
-									gateWeek(m[d.index],"aux2");// prendi gate bar e copiacela dentro che è meglio prolly
+									el = document.getElementById("aux2");
+									if(!!el){
+										el.remove();
+									}
+									//gate sensor
+									var filtered; 
+									//dat1 = filterData(data,m[d.index]);  //filtra i dati in maniera corretta per mese
+									filtered = d3.nest()
+											.key(function(d){return d['gate-name'];})
+											.key(function(d){return d['car-type'];})
+											.entries(dat)
+											
+									temp = []
+									rangerStop = 0;
+									generalGate = 0;
+									entrance = 0;
+									gate = 0;
+									camping = 0;
+									console.log(filtered);
+									for(i=0;i<filtered.length;i++){
+										map={"1":0,"2":0,"3":0,"4":0,"5":0,"6":0,"2P":0}
+										for(j=0;j<filtered[i].values.length;j++){
+											value = filtered[i].values[j].values.length;
+											map[filtered[i].values[j].key] = map[filtered[i].values[j].key] + value;
+											if ((filtered[i].key).indexOf("ranger") > -1) {
+																		rangerStop = rangerStop + value ;
+																		} else if ((filtered[i].key).indexOf("general-gate") > -1) {
+																			generalGate = generalGate + value
+																		} else if ((filtered[i].key).indexOf("entrance") > -1){
+																			entrance = entrance + value
+																		} else if ((filtered[i].key).indexOf("camping") > -1){
+																			camping = camping + value
+																		} else { 
+																			gate = gate + value
+																		}
+											}
+											temp.push([filtered[i].key,map])
+										}
+									arr = [{"key":"ranger-stops","val":rangerStop},{"key":"general-gates","val":generalGate},{"key":"entrances","val":entrance},{"key":"gates","val":gate},{"key":"campings","val":camping}]
+									week = gateWeek(temp,arr,m[d.index],"aux2");// prendi gate bar e copiacela dentro che è meglio prolly
+									console.log(temp);
 									setTimeout(function() {g.unload();	d3.select("#Month").text("Readings per day of the week (" + m[d.index] + ")");},1000);	
 									setTimeout(function() {g.load({columns:matrix});clicked = false;},1500)
 										})								
@@ -1150,10 +1191,18 @@ function multiLine(data,name) { // va bene, vedi se aggiungere qualcosa tipo l'i
 						 position: "top-center"
 					 },
 					legend: {
-						item: {onclick: function (d) {chart.toggle(d);g.toggle(d);}}
+						item: {onclick: function (d) {chart.toggle(d);g.toggle(d); 
+														if(lineLegendShow[d]){ 
+															removeType(d,week,temp)
+															lineLegendShow[d] = false;
+														} else {
+															addType(d,week,temp)
+															lineLegendShow[d] = true;
+													}}
+								},
 					},
-				  bindto: "#svg"+name
-				});
+				  bindto: "#svg"+name,
+			});
 	d3.csv("Lekagul Sensor Data.csv").then(function(data){
 			var parseTime = d3.timeParse("%Y-%m-%d %H:%M:%S");
 			var format = d3.timeFormat("%a");
@@ -1179,8 +1228,10 @@ function multiLine(data,name) { // va bene, vedi se aggiungere qualcosa tipo l'i
 		}
 		g = weekDays(matrix,data,"aux1","General");
 	 })
-  }							
+  }	
+var lineLegendShow = {"1":true,"2":true,"3":true,"4":true,"5":true,"6":true,"2P":true}// usato per tenere conto di quali tipi di macchine sono mostrati o meno
 var clicked = false;
+
 function filterData(data,month){
 			var parseTime = d3.timeParse("%Y-%m-%d %H:%M:%S");
 			var format = d3.timeFormat("%Y-%m-%d");
@@ -1246,12 +1297,12 @@ function weekDays(data,raw,name,filter) {
 			.attr("transform", "translate(" + w / 2 + "," + h/2 + ")");
   //capisci bene come è da organizzare i dati per rappresnetare nella chart i giorni della settimana con sopra "stacked type of vehicle"
 	  //se uno clicca da una parte o dall'altra, viene tutto nascosto in entrambi i grafici.
-	console.log(matrix);
+	console.log(data);
 
 	var chart = bb.generate({
   data: {
 	columns: data,
-    type: "bar",
+    //type: "bar",
 	groups: [
 	//	["4","2P","1","2","3","4","5","6"] //non so se è meglio così (stacked) o uno affianco all'altro
 	]
@@ -1272,6 +1323,9 @@ function weekDays(data,raw,name,filter) {
 			"Sun"]
 		},
 	},
+	legend: {
+			item: {onclick: function (d) {}}
+			},
 	/*title: {text: "Readings per day of the week",
 						 padding: {
 							 top: 10,
@@ -1284,88 +1338,178 @@ function weekDays(data,raw,name,filter) {
 return chart;
 }	
 
-function gateWeek(month,name){
+function gateWeek(data,arr,month,name){
 	var margin = {top: 40, right: 20, bottom: 120, left: 80};
 	
-	var div = d3.select("#container").append("div").attr("id",name).attr("class","gatebar");
-			
-	d3.csv("Lekagul Sensor Data.csv").then(function(data){ 
-			var filtered; 
-			data = filterData(data,month);
-			gates = d3.nest()
-					.key(function(d){return d['gate-name'];})
-		//			.key(function(d){return d['car-type'];})
-					.entries(data)
-					
-			filtered = d3.nest()
-					.key(function(d){return d['gate-name'];})
-					.key(function(d){return d['car-type'];})
-					.entries(data)
-					
-			gates.sort(function(a, b){ return d3.descending(a.values, b.values);});	
-			console.log("f",filtered,"g",gates) 
-			//pensa come usare i due array per fare le cose
+	var div = d3.select("#container").append("div").attr("id",name).attr("class","aux1");
+			document.getElementById(name).style.width="39%";
+			document.getElementById(name).style.height="38%";
+			document.getElementById(name).style.float="right";
 
-			
 			var h = document.getElementById(name).clientHeight;
 			var w = document.getElementById(name).offsetWidth;
-					w = w - margin.left - margin.right;
+					w = w - margin.right;
 					h = h;
-			//devi farlo con billboard così quando uno toglie le cose dalla legenda del line chart si tolgono anche qui le macchine.
-			values = new Array(filtered.length).fill(0);
-			for(i=0;i<filtered.length;i++){
-				arr = [];
-				for(j=0;j<filtered[i].values.length;j++){
-					arr.push(filtered[i].values[j].length);
-				}
-			}
-			
-			//prendi i dati in base all'indice selezoinato, sortali (fa già sopra)  e poi usa questo for per prendere i domini dei gates,
-			//per i valori genera una map in base all'array che hai creato e usa quella per riorganizzare l'array di valori ordinato come i gates
-			ga = [];
-			for(i=0;i<gates.length;i++){
-				ga.push(gates[i].key);
-			}
-			console.log(name);
+	
 			var d = d3.select("#"+name).append("svg")
 				.attr("width", w)
 				.attr("height", h)
 				.attr("id","svg"+name)
-				.style("float","left")
 				.append("g")
 				.attr("transform", "translate(" + w / 2 + "," + h/2 + ")");
 				
-			var chart = bb.generate({
+			var c = bb.generate({
 					  data: {
-						columns: [[1,2,3,]],
+						columns: [[arr[0].key,arr[0].val,0,0,0,0],[arr[1].key,0,arr[1].val,0,0,0],[arr[2].key,0,0,arr[2].val,0,0],[arr[3].key,0,0,0,arr[3].val,0],[arr[4].key,0,0,0,0,arr[4].val]],
 						type: "bar",
-						groups: [
-						//	["4","2P","1","2","3","4","5","6"] //non so se è meglio così (stacked) o uno affianco all'altro
-						]
+						groups: [[arr[0].key,arr[1].key,arr[2].key,arr[3].key,arr[4].key]], //fallo automaticamente seguyendo l'ordine di chi ha più traffico?
+						color: function(color,d){if(name=="aux2")
+									{if(d.id == "ranger-stops"){
+													return "#a6cee3";
+												     } else if(d.id == "general-gates") {
+														return "#1f78b4";
+													 } else if(d.id == "entrances"){
+														return "#b2df8a";
+													 } else if(d.id == "campings"){
+														return "#33a02c";
+													 } else {
+														return "#fb9a99";
+									}}
+								 else {
+									return color;
+									}
+								},
+					  },
+					  legend:{
+						show: false,  
 					  },
 					  tooltip: {
 						  show: false,
 					  },
+					  
 					   axis: {
 							x: {
 							  type: "category",
-							  categories: ga
+						    categories: [arr[0].key,arr[1].key,arr[2].key,arr[3].key,arr[4].key]
 							},
-						},
-						/*title: {text: "Readings per day of the week",
+						}, 
+						bar: {
+							width: {
+							  ratio: 0.5
+							}
+						  },
+						title: {text: "Number of readings per sensor type in " + month,
 											 padding: {
 												 top: 10,
 												 bottom: 10,
 											 },
 											 position: "top-center"
-										 }, */
+										 },
 					  bindto: "#svg"+name
 					});
-			
-})
-}	
+				console.log(c.data());
+				return c;
+}
+	
 
- 
+//aggiorna il grafico di gate week togliendo i tipi di macchine deselezionati nelle altre legend
+function removeType(type,graph,data){
+	console.log(data);
+	console.log(graph.data());
+	var rangers = 0,
+		general = 0,
+		entrances = 0,
+		gates = 0,
+		campings = 0;
+	for(i=0;i<data.length;i++){ //qualcosa non quadra fortissimo qua
+		if ((data[i][0]).indexOf("ranger") > -1) {			//questi sono il numero di visite all'interno dei sensori dei ranger per il tipo di macchina type
+					rangers = rangers + data[i][1][type];
+				//	console.log(data[i][1], data[i][1][type], type);
+				} else if ((data[i][0]).indexOf("general-gate") > -1) {
+					general = general + data[i][1][type];
+				} else if ((data[i][0]).indexOf("entrance") > -1){
+					entrances = entrances + data[i][1][type];
+				} else if ((data[i][0]).indexOf("camping") > -1){
+					campings = campings + data[i][1][type];
+				} else { 
+					gates = gates + data[i][1][type];
+				}
+	}
+		console.log("remove",rangers,gates,entrances,campings,general);
+	d = graph.data();
+	r = 0;
+	ge= 0;
+	e = 0;
+	c = 0;
+	ga = 0;
+	for(j=0;j<d.length;j++){    //prendi i valori del grafico attuale e toglici i valori per tipo selezionato, per ogni sensore
+			if (d[j].id == "ranger-stops") {
+			//	d[j].values[j].value = d[j].values[j].value - rangers;
+				r = d[j].values[j].value - rangers;
+			//	console.log("valore attuale per rangers meno rangers", d[j].values[j].value, rangers)
+			} else if (d[j].id == "general-gates") {
+				ge = d[j].values[j].value - general;
+			//	console.log("valore attuale per general meno general", d[j].values[j].value, general)				
+			} else if (d[j].id == "entrances"){
+				e = d[j].values[j].value - entrances;
+			} else if (d[j].id == "campings"){
+				c = d[j].values[j].value - campings;
+			} else if (d[j].id == "gates") { 
+				ga = d[j].values[j].value - gates;
+		}		
+	}
+	console.log("d",d);
+	console.log("valori da caricare dopo aver tolto",r,ga,e,c,ge); //occhio che forse lo chiama quando non deve
+	arr = [["ranger-stops",r,0,0,0,0],["general-gates",0,ge,0,0,0],["entrances",0,0,e,0,0],["gates",0,0,0,ga,0],["campings",0,0,0,0,c]]
+	graph.unload();
+	graph.load({columns:arr});	
+}
+
+function addType(type,graph,data){
+	var rangers = 0,
+		general = 0,
+		entrances = 0,
+		gates = 0,
+		campings = 0;
+		for(i=0;i<data.length;i++){
+		if ((data[i][0]).indexOf("ranger") > -1) {
+					rangers = rangers + data[i][1][type];
+				} else if ((data[i][0]).indexOf("general-gate") > -1) {
+					general = general + data[i][1][type];
+				} else if ((data[i][0]).indexOf("entrance") > -1){
+					entrances = entrances + data[i][1][type];
+				} else if ((data[i][0]).indexOf("camping") > -1){
+					campings = campings + data[i][1][type];
+				} else { 
+					gates = gates + data[i][1][type];
+				}
+	}
+	console.log("add",rangers,gates,entrances,campings,general);
+	d = graph.data();
+	r = 0;
+	ge= 0;
+	e = 0;
+	c = 0;
+	ga = 0;
+	for(j=0;j<d.length;j++){
+			if (d[j].id == "ranger-stops") {
+				r = d[j].values[j].value + rangers;
+			} else if (d[j].id == "general-gates") {
+				ge = d[j].values[j].value + general;					
+			} else if (d[j].id == "entrances"){
+				e = d[j].values[j].value + entrances;
+			} else if (d[j].id == "campings"){
+				c = d[j].values[j].value + campings;
+			} else if (d[j].id == "gates") { 
+				ga = d[j].values[j].value + gates;
+		}		
+	}
+	console.log("d",d);
+	console.log("valori da caricare dopo aver aggiunto",r,ga,e,c,ge);
+	arr = [["ranger-stops",r,0,0,0,0],["general-gates",0,ge,0,0,0],["entrances",0,0,e,0,0],["gates",0,0,0,ga,0],["campings",0,0,0,0,c]]
+	graph.unload();
+	graph.load({columns:arr});   //la scala va a puttane se schiacci tante votle le cose, probabilmente i valori tornano ok ma l'asse no.
+	} 
 
 function vt(){
 	main = document.getElementById("main");
