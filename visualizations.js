@@ -625,9 +625,25 @@ function pieroni(array,name,title){
 		type: "donut",
 		onover: function(d, i) {
 					div.append("div").attr("x",w/2).style("text-align","center").attr("id","temp").text((Math.round (d.ratio*1000))/10 + "%");
+					d3.select("#gatebar").
+						selectAll("rect").
+						filter(function (e){
+									if ((d.id).indexOf("ranger") > -1 && (e.key).indexOf("ranger") < 0){
+													d3.select(this).style("opacity",0.1); 
+										} else if ((d.id).indexOf("general-gate") > -1 && (e.key).indexOf("general-gate") < 0) {
+													d3.select(this).style("opacity",0.1); 
+										} else if ((d.id).indexOf("entrance") > -1 && (e.key).indexOf("entrance") < 0){
+													d3.select(this).style("opacity",0.1); 
+										} else if ((d.id).indexOf("camping") > -1 && (e.key).indexOf("camping") < 0){
+													d3.select(this).style("opacity",0.1); 										
+										} else if ((d.id) == "gates" && (e.key).length > 6) { 
+													d3.select(this).style("opacity",0.1); 
+												} 
+				})
 	   },
 		onout: function(d, i) {
 					document.getElementById("temp").remove();
+					d3.select("#gatebar").selectAll("rect").style("opacity",1);
 	   }
 	  },
 		legend:{
@@ -733,19 +749,13 @@ function auxBar(data,name,filter){
 				  .style("text-anchor", "middle")
 				  .text("Vehicle Type");      
 				
-			var div = d3.select("#"+name).append("div")
-				.attr("class", "tooltip")
-				.style("opacity", 0);
-
-			
 			canvas.selectAll("rect")
 					.data(data)
 					.enter()
 					.append("rect")
-					//.attr("width",function (d){return x(d.values.length);})
 					.attr("height", y.bandwidth())
 					.attr("y", function(d,i){return y(d.key)})
-					.attr("fill",function(d){if (d.key == "2P") {return "#EC9787";} else {return "steelblue";}})
+					.attr("fill","steelblue") // cambiare sto colore o no?
 					.on("mouseover", function(d,i){
 								 canvas.append("text")
 									 .attr('id','t1')
@@ -783,7 +793,7 @@ function auxBar(data,name,filter){
 						return x(d.values.length);
 					})
 			
-			var legendRect = 18;
+/*			var legendRect = 18;
 			var legendSpacing = 4;
 			
 			legend = canvas.selectAll('.legend')                     // NEW
@@ -809,7 +819,7 @@ function auxBar(data,name,filter){
 				.attr("x", 25)
 				.attr("y", 15)
 				.text(function(d) {return d})
-}
+*/}
 	
 function gateBar(key,filter){
 	var margin = {top: 40, right: 20, bottom: 120, left: 80};
@@ -959,7 +969,7 @@ function gateBar(key,filter){
 					})
 					
 
-			var legendRect = 10;
+/*			var legendRect = 10;
 			var legendSpacing = 4;
 			
 			legend = canvas.selectAll('.legend')                     // NEW
@@ -970,7 +980,7 @@ function gateBar(key,filter){
 			  .attr("transform", function(d,i){
 				  var width = legendRect + legendSpacing;
 				  var offset =  width * 3 / 2 +100;
-				  var horz = i * (legendRect + offset) ;
+				  var horz = i * (legendRect + offset ) ;
 				  var vert = -2 * legendRect - 70;
 				  return "translate("+ (w - (w/4) - horz)+","+ (h - vert) +")";
 			  });
@@ -990,7 +1000,7 @@ function gateBar(key,filter){
 				.attr("y", 10)
 				.attr("font-size","10px")
 				.text(function(d) {return d})
-			
+*/			
 			//modifica pie chart esistente
 			rangerStop = 0;
 			generalGate = 0;
@@ -1101,6 +1111,18 @@ function multiLine(data,name) { // va bene, vedi se aggiungere qualcosa tipo l'i
 					"2016-02-01","2016-03-01","2016-04-01","2016-05-01"],
 					line0,line1,line2,line3,line4,line5,line6
 					],
+				 tooltip: {
+						show: true,
+						 grouped: false,
+						 format: {
+							 title: function(x) { return "Data " + x; },
+							 name: function(name, ratio, id, index) { return name; },
+							 value: function(value, ratio, id, index) { return ratio; }
+						 },
+						 position: function(data, width, height, element) {
+							 return {top: 0, left: 0}
+						 },
+					 },
 				  onclick: function(d, i) { if(clicked == false) {
 								clicked = true;
 								d3.csv("Lekagul Sensor Data.csv").then(function(data){
@@ -1272,7 +1294,7 @@ function filterData(data,month){
 function weekDays(data,raw,name,filter) {
 	var div = d3.select("#container").append("div").attr("id",name).attr("class","aux1");
 			document.getElementById(name).style.width="39%";
-			document.getElementById(name).style.height="60%";
+			document.getElementById(name).style.height="58%";
 			document.getElementById(name).style.float="right";
 	var h = document.getElementById(name).clientHeight;
 	var w = document.getElementById(name).offsetWidth;
@@ -1324,7 +1346,7 @@ function weekDays(data,raw,name,filter) {
 		},
 	},
 	legend: {
-			item: {onclick: function (d) {}}
+			show:false,
 			},
 	/*title: {text: "Readings per day of the week",
 						 padding: {
@@ -1343,7 +1365,7 @@ function gateWeek(data,arr,month,name){
 	
 	var div = d3.select("#container").append("div").attr("id",name).attr("class","aux1");
 			document.getElementById(name).style.width="39%";
-			document.getElementById(name).style.height="38%";
+			document.getElementById(name).style.height="39%";
 			document.getElementById(name).style.float="right";
 
 			var h = document.getElementById(name).clientHeight;
