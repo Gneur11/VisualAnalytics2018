@@ -46,12 +46,91 @@ d3.selection.prototype.moveToBack = function() {
             } 
         });
     };
+
+
+function timeForScatter(name){  //forse meglio heatmap? o qualcos'altro? non è bbello così... forse solo un elenco di giorni nell'angolino in basso a destra?
+								//o un bar chart con il mese in cui sono avvenute le visite?
+	d3.csv("Lekagul Sensor Data.csv").then(function(data){
+			base = data;
+			var ordered = d3.nest()
+					.key(function(d){return d['Timestamp'];})
+					.entries(data);			
+			var parseTime = d3.timeParse("%Y-%m-%d %H:%M:%S");
+			var format = d3.timeFormat("%y-%m-%d");
 	
-function scatter(name,filter,auxName){   //pie chart "comanda"quello che viene visualizzato, aggiungere un'altra view con una timeline di quando si va a posizionare la visita del tipo (pallini su time series) e una coi giorni di visita?
+			ordered.forEach(function(d,i) {   
+				var time = parseTime(d.key);
+				d.key = format(time);
+				})
+			var ordered1 = d3.nest()
+						.key(function(d){return d['key'];})
+						.entries(ordered);
+			mLabels = ["15-05-31","15-06-30","15-07-31","15-08-31","15-09-30","15-10-31","15-11-30","15-12-31","16-01-31","16-02-29","16-03-31","16-04-30","16-05-31"]
+			months = [];
+			j = ordered1.filter(function(d){if (d.key <= mLabels[0] ) {return d;}});   
+			months.push(j);
+			for(i=1;i<mLabels.length;i++){
+				obj = ordered1.filter(function(d){if ((d.key <= mLabels[i]) && (d.key > mLabels[i-1])) {return d;}});
+				months.push(obj);
+			}
+			xTicks = ["x"];
+			values = [];
+			for(i=0;i<ordered1.length;i++){
+				xTicks.push(ordered1[i].key);
+				values.push(ordered1[i].values.length);
+			}
+			var div = d3.select("#container").append("div").attr("id",name).attr("class","mainClass");
+			document.getElementById(name).style.width="100%";
+			document.getElementById(name).style.height="30%";
+			document.getElementById(name).style.float="left";
+			var h = document.getElementById(name).clientHeight;
+			var w = document.getElementById(name).offsetWidth - margin.right - 20;
+			var svg = d3.select("#"+name).append("svg")
+					.attr("id", "svg"+name)
+					.attr("width", w)
+					.attr("height", h)
+					.append("g")
+					.attr("transform", "translate(" + margin.left  + "," + margin.top + ")");
+	//		console.log("months",months); mesi singoli in array 
+			var chart = bb.generate({
+				  data: {
+					x: "x",
+					columns: [xTicks,values],
+					onclick: function(d){console.log(d);},
+				  },
+				axis: {
+					x: {
+					  type: "timeseries",
+						tick: {
+								fit: true,
+								count: 8,
+								format: "%e %b %y"
+							  }
+					}
+				  },
+				   title: {text: "Traffic readings",
+						 padding: {
+							 top: 10,
+							 bottom: 10,
+						 },
+						 position: "top-center"
+					 },
+					legend: {
+						show:false,
+					},
+					point:{
+						show:false,
+					},
+				  bindto: "#svg"+name
+				});
+	});
+}
+	
+function scatter(name,filter,auxName){
 	d3.csv("Lekagul Sensor Data.csv").then(function(data){
 			var base = data;
 			var parseTime = d3.timeParse("%Y-%m-%d %H:%M:%S");
-			var format = d3.timeFormat("%d-%m-%Y");
+			var format = d3.timeFormat("%y-%m-%d");
 			base.forEach(function(d,i) {   
 				var time = parseTime(d.Timestamp);
 				d.Timestamp = format(time);})
@@ -92,9 +171,9 @@ function scatter(name,filter,auxName){   //pie chart "comanda"quello che viene v
 				ordered = moreThan3;
 			}
 			var div = d3.select("#container").append("div").attr("id",name).attr("class","mainClass");
-			document.getElementById(name).style.width="78%";
+			document.getElementById(name).style.width="65%";
 			document.getElementById(name).style.float="left";
-			document.getElementById(name).style.height="80%";
+			document.getElementById(name).style.height="99%";
 			var h = document.getElementById(name).clientHeight;
 			var w = document.getElementById(name).offsetWidth;
 			    w = w + 20 - margin.right - margin.left;
@@ -202,7 +281,21 @@ function scatter(name,filter,auxName){   //pie chart "comanda"quello che viene v
 					.attr("cy", function (d,i) {return y(d.sum);} )
 					.attr("r", 2)
 					.attr("fill", "lightgray")
-						
+					.on("click",function(d){
+											day = document.getElementById("aux2");
+											img = document.getElementById("svgaux2")
+												if(!!day){
+														img.remove();
+														day.remove();
+											}
+											dayMonthBar(d.days,"aux2");
+											})
+					.on("mouseover",function(d){
+												d3.select(this).attr("r",5).transition().duration(500);})
+					.on("mouseout",function(d){
+												d3.select(this).attr("r",2)}
+												)
+		
 		function onchange() {
 			s = document.getElementById("sel")
 			selectValue= ""+s[s.selectedIndex].value;
@@ -244,7 +337,10 @@ function scatter(name,filter,auxName){   //pie chart "comanda"quello che viene v
 						x.domain([0,data.length-1]);
 						y.domain([0,max]);
 					} 
-					//hid = false; 
+					day = document.getElementById("aux2");
+					if(!!day){
+							day.remove();
+					}
 					svg.selectAll("circle")
 						.remove()
 					svg.select("#showButton")
@@ -256,9 +352,24 @@ function scatter(name,filter,auxName){   //pie chart "comanda"quello che viene v
 						.append("circle")
 						.attr("cx", function (d,i){return x(i);})
 						.attr("cy", function (d,i) {return y(d.sum);} )
-						.attr("r", function(d) {if (filter == "3 or more Days") {return 4.6} else {return 2}}) //non so perchè non va
+						.attr("r", function(d) {if (filter == "3 or more Days") {return 3.5} else {return 2}}) //non so perchè non va
 						.attr("fill", "lightgray")
-
+						.on("click",function(d){
+												day = document.getElementById("aux2");
+												img = document.getElementById("svgaux2")
+												if(!!day){
+														img.remove();
+														day.remove();
+												}
+												dayMonthBar(d.days,"aux2");
+											})
+					.on("mouseover",function(d){d3.select(this).attr("r",5)})
+					.on("mouseout",function(d){if (filter == "3 or more Days") {
+														d3.select(this).attr("r",3.5).transition().duration(500);}
+													else {
+														d3.select(this).attr("r",2).transition().duration(500);
+														}})
+											
 					svg.select(".x")
 						.transition()
 						.duration(1000)
@@ -313,102 +424,7 @@ function scatter(name,filter,auxName){   //pie chart "comanda"quello che viene v
     var chart = gauge("aux1",ordered);	}
 	)}        
 
-function timeBB(name,data){ //problemi col fare le cose, forse è inutile? idee?
-			var ordered = d3.nest()
-					.key(function(d){return d['Timestamp'];})
-					.entries(data);
-			var date = "2015-05-01 08:32:09"
-			var parseTime = d3.timeParse("%Y-%m-%d %H:%M:%S");
-			var c = parseTime(date);
-			var format = d3.timeFormat("%y-%m-%d");
-			ordered.forEach(function(d,i) {   
-				var time = parseTime(d.key);
-				d.key = format(time);
-				})
-			var ordered1 = d3.nest()
-						.key(function(d){return d['key'];})
-						.entries(ordered);
-			var a = ordered1.filter(function(d){if (d.key > ordered[0].key) {return d;}});
-			var div = d3.select("#container").append("div").attr("id",name).attr("class","mainClass");
-			document.getElementById(name).style.width="78%";
-			document.getElementById(name).style.height="33%";
-			var h = document.getElementById(name).clientHeight;
-			var w = document.getElementById(name).offsetWidth;
-			    w = w - margin.left - margin.right;
-				h = h - margin.top - margin.bottom;
-			var max = d3.max(ordered1,function(d){return d.values.length;});
-			//console.log(max);
-			
-			var x = d3.scaleLinear().range([0, w]), // w -marginright
-			y = d3.scaleLinear().range([h,0]);
-			x.domain([0,ordered1.length]);
-			y.domain(d3.extent(ordered1, function(d) {return d.values.length;}));
-			var xAxis = d3.axisBottom(x);
-			var yAxis = d3.axisLeft(y);
-			var line = d3.line()
-						.x(function(d,i) {return x(i);})
-						.y(function(d) {return y(d.values.length);})			
-			
-			var svg = d3.select("#"+name).append("svg")
-					.attr("id", "svg"+name)
-					.attr("width", w + margin.left + margin.right)
-					.attr("height", h + margin.top + margin.bottom)
-					.append("g")
-					.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-			
-			svg.append("g")
-				  .attr("transform", "translate(0," + h + ")")
-				  .call(d3.axisBottom(x));
-
-			  // text label for the x axis
-			svg.append("text")             
-				  .attr("transform",
-						"translate(" + (w/2) + " ," + 
-									   (h + margin.top) + ")")
-				  .style("text-anchor", "middle")
-				  .text("Day");
-			
-			 // Add the y Axis
-			svg.append("g")
-				.call(d3.axisLeft(y));
-	
-			// text label for the y axis
-			svg.append("text")
-				.attr("transform", "rotate(-90)")
-				  .attr("y", 0 - margin.left)
-				  .attr("x",0 - (h / 2))
-				  .attr("dy", "1em")
-				  .style("text-anchor", "middle")
-				  .text("Traffic");
-			
-		var path = svg.append("path")
-				.datum(ordered1)
-				.attr("fill","none")
-				.attr("stroke", "steelblue")
-				.attr("class","line")
-				.attr("stroke-width",1.5)
-				.attr("d",line);
-
-		var totalLength = path.node().getTotalLength();
-			
-			  path.attr("stroke-dasharray", totalLength + " " + totalLength)
-				  .attr("stroke-dashoffset", totalLength)
-				  .transition()
-					.duration(2000)
-					.attr("stroke-dashoffset", 0);	
-			svg.selectAll("dot")
-					.data(ordered1)
-				  .enter().append("circle")
-					.attr("r", 1)
-					.attr("fill","blue")
-					.attr("opacity","0.5")
-					.attr("cx", function(d,i) { return x(i); })
-					.attr("cy", function(d) { return y(d.values.length); });
-		return ordered1;
-		};
-	
 function gauge(name,data){  //scatter controller
-	console.log(data);
 	t2P = 0;
 	t1 = 0;
 	t2 = 0;
@@ -436,8 +452,8 @@ function gauge(name,data){  //scatter controller
 
 	var div = d3.select("#container").append("div").attr("id",name).attr("class",name).style("font-size","12px");
 				document.getElementById(name).style.float="right";
-				document.getElementById(name).style.height="50%";
-				document.getElementById(name).style.width="21%";
+				document.getElementById(name).style.height="49%";
+				document.getElementById(name).style.width="34%";
 	var h = document.getElementById(name).clientHeight;
 	var w = document.getElementById(name).offsetWidth;
 	    w = w ;
@@ -460,9 +476,6 @@ var d = d3.select("#"+name).append("svg")
 	clicked["5t"] = 0;
 	clicked["6t"] = 0;
 	clicked["2Pt"] = 0;
-
-	console.log(clicked);
-	console.log(clicked["1t"] == 0);
 	var chart = bb.generate({
 	  data: {
 		columns: [[]],
@@ -502,14 +515,104 @@ var d = d3.select("#"+name).append("svg")
 	return chart;
 }	
 
+function dayMonthBar(days,name){
+	var parseTime = d3.timeParse("%Y-%m-%d");
+	var format = d3.timeFormat("%b");
+	d = new Array(days.len).fill(0);
+	for(i=0;i<days.length;i++){				
+		var time = parseTime(days[i]);
+		d[i] = format(time);
+		}						
+	console.log(d);
+	base = d[0];
+	counter = 1;
+	x = [];
+	if(d.length == 1){
+		base = d[0];
+		counter = 1;
+		console.log("lenght 1")
+		x.push([base,counter])
+	} else {
+		j = 1;
+		do{
+			if(d[j] == base){
+				counter = counter + 1;
+				j++;
+				console.log("d=base",counter)
+			} else {
+				x.push([base,counter]);
+				base = d[j];
+				counter = 1;
+				console.log("diverso");
+				j++;
+			}
+		} while (j < d.length);
+		x.push([base,counter]);
+	}
+	console.log(x);
+	arr = []
+	for(i=0;i<x.length;i++){
+		arr.push(x[i]);
+	}
+	console.log(arr);
+	var div = d3.select("#container").append("div").attr("id",name).attr("class",name).style("font-size","12px");
+			document.getElementById(name).style.float="right";
+			document.getElementById(name).style.height="49%";
+			document.getElementById(name).style.width="34%";
+	var h = document.getElementById(name).clientHeight;
+	var w = document.getElementById(name).offsetWidth;
+	h = h - margin.top;
+	var svg = d3.select("#"+name).append("svg")
+			.attr("width", w)
+			.attr("height", h)
+			.attr("id","svg"+name)
+			.style("float","left")
+			.append("g")
+			.attr("transform", "translate(" + w / 2 + "," + h/2 + ")");
+			
+	var c = bb.generate({
+				data: {	
+						columns: arr,
+						type: "pie",
+								onover: function(d, i) {
+										div.append("div").attr("x",w/2).style("text-align","center").attr("id","temp").text((Math.round (d.ratio*1000))/10 + "%");
+								},
+								onout: function(d, i) {
+								document.getElementById("temp").remove();
+								},
+					  },
+					  tooltip: {
+						  show: true,
+					  },
+						bar: {
+							width: {
+							  ratio: 0.5
+							}
+						  },
+						legend:{
+								item: {onclick: function(){},},
+							},
+						title: {text: "Readings by month for the selected vehicle",
+											 padding: {
+												 top: 10,
+												 bottom: 10,
+											 },
+											 position: "top-center"
+										 },
+					  bindto: "#svg"+name
+					});
+	
+	
+}		
+
 function vID(){
 	main = document.getElementById("main");
 	if(!!main){
 		main.remove();
 	}
 	scatter("main","General","aux1");
-	console.log("mostra id");
-}
+	//timeForScatter("aux2");
+	}
 
 function bar(name,filter){
 	main = document.getElementById("main");
@@ -577,6 +680,7 @@ function onchange() {
 				if(!!pie1){
 					pie1.remove();
 				}
+
 			    s = document.getElementById("s")
 				selectValue= ""+s[s.selectedIndex].value;
 				bar("main",selectValue);
@@ -679,6 +783,8 @@ function auxBar(data,name,filter){
 						  .append('select')
 							.attr("id","s")
 							.attr('class','select')
+							.style("margin-top","10px")
+							.style("margin-left","10px")
 							.on('change',onchange)
 			
 			var options = s
@@ -1027,11 +1133,11 @@ function gateBar(key,filter){
 
 function multiLine(data,name) { // va bene, vedi se aggiungere qualcosa tipo l'istogramma per veicolo per giorno della settimana
 			var div = d3.select("#container").append("div").attr("id",name).attr("class","mainClass");
-			document.getElementById(name).style.width="60%";
+			document.getElementById(name).style.width="57%";
 			document.getElementById(name).style.height="98%";
 			document.getElementById(name).style.float="left";
 			var h = document.getElementById(name).clientHeight;
-			var w = document.getElementById(name).offsetWidth - margin.right - 20;
+			var w = document.getElementById(name).clientWidth - margin.right - 20;
 			var cols = [];
 			var months = [];
 			var rows= data.length;
@@ -1220,7 +1326,20 @@ function multiLine(data,name) { // va bene, vedi se aggiungere qualcosa tipo l'i
 														} else {
 															addType(d,week,temp)
 															lineLegendShow[d] = true;
-													}}
+													}},
+								onover: function(d) {
+										matrix = [line0[0],line1[0],line2[0],line3[0],line4[0],line5[0],line6[0]]
+										for(i=0;i<matrix.length;i++){
+											if(matrix[i] != d){
+												chart.defocus(matrix[i]);
+												g.defocus(matrix[i]);
+											}
+										}
+									},
+								onout: function(d) {
+										chart.focus()
+										g.focus();
+									},
 								},
 					},
 				  bindto: "#svg"+name,
@@ -1293,7 +1412,7 @@ function filterData(data,month){
   
 function weekDays(data,raw,name,filter) {
 	var div = d3.select("#container").append("div").attr("id",name).attr("class","aux1");
-			document.getElementById(name).style.width="39%";
+			document.getElementById(name).style.width="42%";
 			document.getElementById(name).style.height="58%";
 			document.getElementById(name).style.float="right";
 	var h = document.getElementById(name).clientHeight;
@@ -1364,7 +1483,7 @@ function gateWeek(data,arr,month,name){
 	var margin = {top: 40, right: 20, bottom: 120, left: 80};
 	
 	var div = d3.select("#container").append("div").attr("id",name).attr("class","aux1");
-			document.getElementById(name).style.width="39%";
+			document.getElementById(name).style.width="42%";
 			document.getElementById(name).style.height="39%";
 			document.getElementById(name).style.float="right";
 
@@ -1568,7 +1687,6 @@ function timeroni(name){
 			var ordered1 = d3.nest()
 						.key(function(d){return d['key'];})
 						.entries(ordered);
-			console.log("ciaoo",ordered1);
 			mLabels = ["15-05-31","15-06-30","15-07-31","15-08-31","15-09-30","15-10-31","15-11-30","15-12-31","16-01-31","16-02-29","16-03-31","16-04-30","16-05-31"]
 			months = [];
 			j = ordered1.filter(function(d){if (d.key <= mLabels[0] ) {return d;}});   
@@ -1583,7 +1701,6 @@ function timeroni(name){
 				xTicks.push(ordered1[i].key);
 				values.push(ordered1[i].values.length);
 			}
-			console.log(xTicks,values);
 			var div = d3.select("#container").append("div").attr("id",name).attr("class","mainClass");
 			document.getElementById(name).style.width="100%";
 			document.getElementById(name).style.height="60%";
@@ -1606,7 +1723,6 @@ function timeroni(name){
 					x: {
 					  type: "timeseries",
 					  tick: {
-							count: 13,
 							format: "%d-%m-%y",
 						}
 					}
