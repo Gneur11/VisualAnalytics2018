@@ -1703,10 +1703,28 @@ function timeroni(name){
 			}
 			var div = d3.select("#container").append("div").attr("id",name).attr("class","mainClass");
 			document.getElementById(name).style.width="100%";
-			document.getElementById(name).style.height="60%";
+			document.getElementById(name).style.height="70%";
 			document.getElementById(name).style.float="left";
 			var h = document.getElementById(name).clientHeight;
 			var w = document.getElementById(name).offsetWidth - margin.right - 20;
+			d3.select("#"+name).append("div")
+								.append("input")
+								.style("z-index",3)
+								.style("display","block")
+								.style("position","fixed")
+								.style("right","20px")
+								.attr("class","filterButton")
+								.attr("id","showForce")
+								.style("background-color","#38B6FF")
+								.style("border","none")
+								.style("margin-top","20px")
+								.style("margin-left","20px")
+								.style("margin-right","20px")
+								.style("color","white")
+								.attr("type","button")
+								.attr("value","Show Detail") 
+								.style("opacity",0)
+								
 			var svg = d3.select("#"+name).append("svg")
 					.attr("id", "svg"+name)
 					.attr("width", w)
@@ -1729,7 +1747,18 @@ function timeroni(name){
 				  },
 				subchart: {
 					show:true,                         //USA QUESTO SUL TIME per calcolare il traffico e metterlo nel force graph!
-					onbrush: function(domain) { console.log(domain)},
+					onbrush: function(domain) { 
+					//problemi col parser, zero voglia di vedere adesso, guarda bene
+												var format = d3.timeFormat("%y-%m-%d");
+												beginning = d3.isoParse(domain[0]);
+												end = d3.isoParse(domain[1]);
+												domain[0] = format(beginning);
+												domain[1] = format(end); //cambi il formato del dominio da ISO a qualcosa di utilizzabile
+												console.log(domain)
+												//force("a",domain);
+												d3.select("#showForce").style("opacity",1).on("click",function(){console.log(domain);force("a",domain)});
+											
+												},
 					size: {height: 20,}
 				},  
 				   title: {text: "Traffic readings",
@@ -1747,4 +1776,172 @@ function timeroni(name){
 	});
 }
 
+function force(name,domain) {   
+	var margin = {top: 40, right: 20, bottom: 50, left: 10};
+
+	d3.csv("Lekagul Sensor Data.csv").then(function(data){
+			var base = data;
+			var parseTime = d3.timeParse("%Y-%m-%d %H:%M:%S");
+			var format = d3.timeFormat("%y-%m-%d");
+			base.forEach(function(d,i) {   
+			time = parseTime (d.Timestamp)
+			d.Timestamp = format(time)}
+			)
+/*			var h = document.getElementById(name).clientHeight;
+			var w = document.getElementById(name).offsetWidth;
+			    w = w - margin.left - margin.right;
+				h = h - margin.top - margin.bottom ; */
+			console.log(base);
+			//problema è la data
+			console.log(domain[0],domain[1]);
+			base = base.filter(function(d){return (d["Timestamp"] >= domain[0])})
+			base = base.filter(function(d){return (d["Timestamp"] <= domain[1])})
+			console.log("base",base);
+			var general = d3.nest()
+					.key(function(d){return d['gate-name'];})
+					.key(function(d){return d['car-id'];})
+					.entries(base)
+			console.log(general)
+			
+			var links = d3.nest()
+						.key(function(d) {return d['car-id'];})
+						.key(function(d) {return d['Timestamp'];})
+						.rollup(function (v) {var arr = [];
+												for(i=0;i<v.length;i++){
+													arr.push(v[i]['gate-name']);
+												}
+											  return {"path":arr,"car":v[0]["car-id"],"type": v[0]["car-type"]}
+						})
+						.entries(base)
+					//	.filter(function(d) {if((d.Timestamp => domain[0]) && (d.Timestamp <= domain[1])) {return d}})
+			
+			var nodesGeneral = [];
+			for (i=0;i<general.length;i++){
+				n = general[i].key 
+				obj = {"label": n, "value": general[i].values.length}
+				nodesGeneral.push(obj);
+			}
+			nodesGeneral = nodesGeneral.sort(function(a,b){return d3.ascending(a.label,b.label)})
+			console.log(links[0].values[0].value.path)
+			var paths = [];
+			for(i=0;i<links.length;i++){
+				p1 = []
+				for(j=0;j<links[i].values.length;j++){
+					p = links[i].values[j].value.path
+					p1.push(p);
+				}
+				paths.push(p1);
+			}
+			
+			console.log(paths);
+			var map = {};
+			var order = [];
+			var matrix = [];
+			for(var i=0; i<general.length; i++) {
+				matrix[i] = new Array(general.length);
+				matrix[i].fill(0);
+				map[general[i].key] = i;
+				order.push(general[i].key);
+			}
+					
+			for(i=0;i<paths.length;i++){
+				for(j=0;j<paths[i].length;j++){
+					for(k=0;k<paths[i][j].length-1;k++){
+							curr = paths[i][j][k]
+							next = paths[i][j][k+1]
+							matrix[ map[curr] ][ map[next] ]= matrix[ map[curr] ][ map[next] ] + 1;
+						}
+					}
+				}
+			console.log("o",order); //contiene l'ordine
+			console.log(matrix);
+			console.log(map);
+			
+			links = [];
+			for(i=0;i<matrix.length;i++){
+				for(j=0;j<matrix[i].length;j++){
+						//console.log(matrix[i][j]);
+						if(matrix[i][j] != 0 && order[i] != order[j]){ //togli le reads una uguale all'altra, farebbero i loop sul nodo
+						el = {"origin":order[i], "target":order[j], "value": matrix[i][j],"strength":0.7}
+						links.push(el);
+						}
+				}
+			}
+			console.log("links",links);
+			console.log("nodesgen",nodesGeneral);
+			
+			//usa questi dati per fare i link, il colore sarà su una scala di rosso, se valore è 0 allora non disegni link
+			
+		//	manca solo il force directed graph ed è finito porcodiooooooooo
+	/*		var simulation = d3
+				  .forceSimulation()
+				  .force('charge', d3.forceManyBody().strength(-10))
+				  .force('center', d3.forceCenter(w / 2, h / 2))
+							
+			var svg = d3.select("#"+name).append("svg")
+					.attr("id", "svg"+name)
+					.attr("width", w + margin.left + margin.right)
+					.attr("height", h + margin.top + margin.bottom)
+					.append("g")
+					.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+			console.log(nodesGeneral);
+			
+			max = 0;
+			for(i=0;i<nodesGeneral.length;i++){
+				val = nodesGeneral[i].value;
+				if(val > max){
+					max = val;
+				}
+			}
+			console.log(max);
+			
+			var rscale = d3.scaleLinear().domain([0,max]).range([3,7]);
+			
+			var nodeElements = svg.append("g")
+					  .attr("class", "nodes")
+					  .selectAll("circle")
+					  .data(nodesGeneral)
+					  .enter().append("circle")
+						.attr("r", function(d) {return rscale(d.value)})
+						.attr("fill", "blue")
+			
+			var textElements = svg.append("g")
+					  .attr("class", "texts")
+					  .selectAll("text")
+					  .data(nodesGeneral)
+					  .enter().append("text")
+						.text(function (node) { return  node.label })
+						  .attr("font-size", 10)
+						  .attr("dx", 15)
+						.attr("dy", 4)
+			/*  simulation.nodes(nodesGeneral).on('tick', () => {
+				nodeElements
+				  .attr('cx', function (node) { return node.x })
+				  .attr('cy', function (node) { return node.y })
+				textElements
+				  .attr('x', function (node) { return node.x })
+				  .attr('y', function (node) { return node.y })
+				  
+		/*		simulation.force('link',d3.forceLink()
+							.strength(link => link.strength))
+				
+		/*			const linkElements = svg.append('g')
+						  .selectAll('line')
+						  .data(links)
+						  .enter().append('line')
+							.attr('stroke-width', 1)
+							.attr('stroke', '#E5E5E5')
+				linkElements
+					 .attr('x1', link => links.origin.x)
+					 .attr('y1', link => links.origin.y)
+					 .attr('x2', link => links.target.x)
+					 .attr('y2', link => links.target.y)
+				simulation.force('link').links(links)
+
+							
+				})
+*/					  
+			
+})
+}
 
