@@ -1,6 +1,6 @@
 var margin = {top: 40, right: 20, bottom: 50, left: 60};
 var gInput = "";
-
+//metti un radar chart da qualche parte per far vedere quali veicoli partecipano in quali sensori e viceversa (?)
 
 function resize (e) {
 		init(gInput);
@@ -23,6 +23,10 @@ function init(input,ele){
 	e2 = document.getElementById("aux2");
 	if(!!e2){
 		e2.remove();
+	}
+	e3 = document.getElementById("a");
+	if(!!e3){
+		e3.remove();
 	}
 	if(input == "Vehicle Type"){
 		vt();
@@ -1232,7 +1236,7 @@ function multiLine(data,name) { // va bene, vedi se aggiungere qualcosa tipo l'i
 				  onclick: function(d, i) { if(clicked == false) {
 								clicked = true;
 								d3.csv("Lekagul Sensor Data.csv").then(function(data){
-								m = ["Maggio 2015","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre","Gennaio","Febbraio","Marzo","Aprile","Maggio 2016"]
+								m = ["May 2015","June","July","August","September","October","November","December","January","February","March","April","May 2016"]
 								dat = filterData(data, m[d.index]);
 								c = g.data() //prende i dati dell'altro, funziona, puoi modificare le cose così
 								  var parseTime = d3.timeParse("%Y-%m-%d");
@@ -1380,31 +1384,31 @@ function filterData(data,month){
 				var time = parseTime(d.Timestamp);
 				d.Timestamp = format(time);
 				})
-			if(month == "Maggio 2015"){
+			if(month == "May 2015"){
 				data = data.filter(function(d) {if (d.Timestamp < "2015-05-31") {return d}})
-			} else if (month == "Giugno") {
+			} else if (month == "June") {
 				data = data.filter(function(d) {if ((d.Timestamp > "2015-05-31") && (d.Timestamp < "2015-06-31"))  {return d}})
-			} else if (month == "Luglio"){
+			} else if (month == "July"){
 				data = data.filter(function(d) {if ((d.Timestamp > "2015-06-31")&& (d.Timestamp < "2015-07-31")) {return d}})
-			} else if (month == "Agosto"){
+			} else if (month == "August"){
 				data = data.filter(function(d) {if ((d.Timestamp > "2015-07-31")&& (d.Timestamp < "2015-08-31")) {return d}})
-			} else if (month == "Settembre"){
+			} else if (month == "September"){
 				data = data.filter(function(d) {if ((d.Timestamp > "2015-08-31")&& (d.Timestamp < "2015-09-31")) {return d}})
-			} else if (month == "Ottobre"){
+			} else if (month == "October"){
 				data = data.filter(function(d) {if ((d.Timestamp > "2015-09-31")&& (d.Timestamp < "2015-10-31")) {return d}})
-			} else if (month == "Novembre"){
+			} else if (month == "November"){
 				data = data.filter(function(d) {if ((d.Timestamp > "2015-10-31")&& (d.Timestamp < "2015-11-31")) {return d}})
-			} else if (month == "Dicembre"){
+			} else if (month == "December"){
 				data = data.filter(function(d) {if ((d.Timestamp > "2015-11-31")&& (d.Timestamp < "2015-12-31")) {return d}})
-			} else if (month == "Gennaio"){
+			} else if (month == "January"){
 				data = data.filter(function(d) {if ((d.Timestamp > "2015-12-31")&& (d.Timestamp < "2016-01-31")) {return d}})
-			} else if (month == "Febbraio"){
+			} else if (month == "February"){
 				data = data.filter(function(d) {if ((d.Timestamp > "2016-01-31")&& (d.Timestamp < "2016-02-31")) {return d}})
-			} else if (month == "Marzo"){
+			} else if (month == "March"){
 				data = data.filter(function(d) {if ((d.Timestamp > "2016-02-31")&& (d.Timestamp < "2016-03-31")) {return d}})
-			} else if (month == "Aprile"){
+			} else if (month == "April"){
 				data = data.filter(function(d) {if ((d.Timestamp > "2016-03-31")&& (d.Timestamp < "2016-04-31")) {return d}})
-			} else if (month == "Maggio 2016"){
+			} else if (month == "May 2016"){
 				data = data.filter(function(d) {if ((d.Timestamp > "2016-04-31")&& (d.Timestamp < "2016-05-31")) {return d}})
 			}
 		return data;
@@ -1702,16 +1706,34 @@ function timeroni(name){
 				values.push(ordered1[i].values.length);
 			}
 			var div = d3.select("#container").append("div").attr("id",name).attr("class","mainClass");
-			document.getElementById(name).style.width="100%";
-			document.getElementById(name).style.height="70%";
+			document.getElementById(name).style.width="99.5%";
+			document.getElementById(name).style.height="49%";
 			document.getElementById(name).style.float="left";
 			var h = document.getElementById(name).clientHeight;
-			var w = document.getElementById(name).offsetWidth - margin.right - 20;
+			var w = document.getElementById(name).offsetWidth - margin.right;
+			
+			var offsets = document.getElementById(name).getBoundingClientRect();
+			var top = offsets.top;
+			var left = offsets.left;
+
+			
+			d3.select("#"+name).append("div")
+								.style("margin-top","20px")
+								.style("margin-left","20px")
+								.style("position","absolute")
+								.style("left",left)
+								.style("top",top)
+								.style("text-align","center")
+								.style("z-index",3)
+								.attr("id","temp")
+								.style("font-size","10px")
+								.text("Selected time interval: ")
+			
 			d3.select("#"+name).append("div")
 								.append("input")
 								.style("z-index",3)
 								.style("display","block")
-								.style("position","fixed")
+								.style("position","absolute")
 								.style("right","20px")
 								.attr("class","filterButton")
 								.attr("id","showForce")
@@ -1741,25 +1763,43 @@ function timeroni(name){
 					x: {
 					  type: "timeseries",
 					  tick: {
+							fit: true,  //guarda bene fa cacar
+							count: 12,
 							format: "%d-%m-%y",
 						}
 					}
 				  },
 				subchart: {
-					show:true,                         //USA QUESTO SUL TIME per calcolare il traffico e metterlo nel force graph!
+					show:true,
 					onbrush: function(domain) { 
-					//problemi col parser, zero voglia di vedere adesso, guarda bene
 												var format = d3.timeFormat("%y-%m-%d");
 												beginning = d3.isoParse(domain[0]);
 												end = d3.isoParse(domain[1]);
 												domain[0] = format(beginning);
-												domain[1] = format(end); //cambi il formato del dominio da ISO a qualcosa di utilizzabile
-												console.log(domain)
-												//force("a",domain);
-												d3.select("#showForce").style("opacity",1).on("click",function(){console.log(domain);force("a",domain)});
-											
+												domain[1] = format(end);
+												toShow = d3.timeFormat("%d-%m-%y (%a)");
+												d3.select("#showForce").style("opacity",1).on("click",function(){
+																												a = document.getElementById("a");
+																												if(!!a){
+																													a.remove();
+																												};
+																												if(!!document.getElementById("aux2")){
+																													document.getElementById("aux2").remove();
+																												}
+																												force("a",domain)});
+												d3.select("#temp").text("Selected time interval: "+ toShow(beginning) +" , "+toShow(end))
 												},
-					size: {height: 20,}
+					size: {height: 10,},
+					axis: {
+						x: {
+						  type: "timeseries",
+						  tick: {
+								fit: true,  
+								count: 12,
+								format: "%d-%m-%y",
+							}
+						}
+					  }
 				},  
 				   title: {text: "Traffic readings",
 						 padding: {
@@ -1787,21 +1827,13 @@ function force(name,domain) {
 			time = parseTime (d.Timestamp)
 			d.Timestamp = format(time)}
 			)
-/*			var h = document.getElementById(name).clientHeight;
-			var w = document.getElementById(name).offsetWidth;
-			    w = w - margin.left - margin.right;
-				h = h - margin.top - margin.bottom ; */
-			console.log(base);
-			//problema è la data
-			console.log(domain[0],domain[1]);
+//			console.log(base);
 			base = base.filter(function(d){return (d["Timestamp"] >= domain[0])})
 			base = base.filter(function(d){return (d["Timestamp"] <= domain[1])})
-			console.log("base",base);
 			var general = d3.nest()
 					.key(function(d){return d['gate-name'];})
 					.key(function(d){return d['car-id'];})
 					.entries(base)
-			console.log(general)
 			
 			var links = d3.nest()
 						.key(function(d) {return d['car-id'];})
@@ -1812,9 +1844,7 @@ function force(name,domain) {
 												}
 											  return {"path":arr,"car":v[0]["car-id"],"type": v[0]["car-type"]}
 						})
-						.entries(base)
-					//	.filter(function(d) {if((d.Timestamp => domain[0]) && (d.Timestamp <= domain[1])) {return d}})
-			
+						.entries(base)			
 			var nodesGeneral = [];
 			for (i=0;i<general.length;i++){
 				n = general[i].key 
@@ -1822,7 +1852,6 @@ function force(name,domain) {
 				nodesGeneral.push(obj);
 			}
 			nodesGeneral = nodesGeneral.sort(function(a,b){return d3.ascending(a.label,b.label)})
-			console.log(links[0].values[0].value.path)
 			var paths = [];
 			for(i=0;i<links.length;i++){
 				p1 = []
@@ -1833,7 +1862,6 @@ function force(name,domain) {
 				paths.push(p1);
 			}
 			
-			console.log(paths);
 			var map = {};
 			var order = [];
 			var matrix = [];
@@ -1853,95 +1881,251 @@ function force(name,domain) {
 						}
 					}
 				}
-			console.log("o",order); //contiene l'ordine
-			console.log(matrix);
-			console.log(map);
-			
+
 			links = [];
+			max = 0;
+			min = 0;
 			for(i=0;i<matrix.length;i++){
 				for(j=0;j<matrix[i].length;j++){
-						//console.log(matrix[i][j]);
 						if(matrix[i][j] != 0 && order[i] != order[j]){ //togli le reads una uguale all'altra, farebbero i loop sul nodo
-						el = {"origin":order[i], "target":order[j], "value": matrix[i][j],"strength":0.7}
+						el = {"source":order[i], "target":order[j], "value": matrix[i][j],"strength":0.7}
 						links.push(el);
+						if(el.value > max){
+							max = el.value;
+						} else if (min == 0){
+							min = el.value;
+						} else if(el.value < min){
+							min = el.value;
 						}
+					}
 				}
 			}
+/*			console.log(min,max);
 			console.log("links",links);
 			console.log("nodesgen",nodesGeneral);
-			
-			//usa questi dati per fare i link, il colore sarà su una scala di rosso, se valore è 0 allora non disegni link
-			
-		//	manca solo il force directed graph ed è finito porcodiooooooooo
-	/*		var simulation = d3
-				  .forceSimulation()
-				  .force('charge', d3.forceManyBody().strength(-10))
-				  .force('center', d3.forceCenter(w / 2, h / 2))
-							
-			var svg = d3.select("#"+name).append("svg")
-					.attr("id", "svg"+name)
-					.attr("width", w + margin.left + margin.right)
-					.attr("height", h + margin.top + margin.bottom)
-					.append("g")
-					.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-			console.log(nodesGeneral);
-			
-			max = 0;
-			for(i=0;i<nodesGeneral.length;i++){
-				val = nodesGeneral[i].value;
-				if(val > max){
-					max = val;
-				}
-			}
-			console.log(max);
-			
-			var rscale = d3.scaleLinear().domain([0,max]).range([3,7]);
-			
-			var nodeElements = svg.append("g")
-					  .attr("class", "nodes")
-					  .selectAll("circle")
-					  .data(nodesGeneral)
-					  .enter().append("circle")
-						.attr("r", function(d) {return rscale(d.value)})
-						.attr("fill", "blue")
-			
-			var textElements = svg.append("g")
-					  .attr("class", "texts")
-					  .selectAll("text")
-					  .data(nodesGeneral)
-					  .enter().append("text")
-						.text(function (node) { return  node.label })
-						  .attr("font-size", 10)
-						  .attr("dx", 15)
-						.attr("dy", 4)
-			/*  simulation.nodes(nodesGeneral).on('tick', () => {
-				nodeElements
-				  .attr('cx', function (node) { return node.x })
-				  .attr('cy', function (node) { return node.y })
-				textElements
-				  .attr('x', function (node) { return node.x })
-				  .attr('y', function (node) { return node.y })
-				  
-		/*		simulation.force('link',d3.forceLink()
-							.strength(link => link.strength))
-				
-		/*			const linkElements = svg.append('g')
-						  .selectAll('line')
-						  .data(links)
-						  .enter().append('line')
-							.attr('stroke-width', 1)
-							.attr('stroke', '#E5E5E5')
-				linkElements
-					 .attr('x1', link => links.origin.x)
-					 .attr('y1', link => links.origin.y)
-					 .attr('x2', link => links.target.x)
-					 .attr('y2', link => links.target.y)
-				simulation.force('link').links(links)
+	*/					
+			//div utilizzata da questo 
+			var div = d3.select("#container").append("div").attr("id",name).attr("class","aux2");
+			document.getElementById(name).style.width="70%";
+			document.getElementById(name).style.height="49%";
+			document.getElementById(name).style.float="left";
+			//div utilizzata dall'altra funzione per visualizzare i dettagli
+			name1 = "aux2";
+			var h = document.getElementById(name).clientHeight;
+			var w = document.getElementById(name).offsetWidth;
+			    w = w;
+				h = h; 
 
-							
-				})
-*/					  
+			var svg = d3.select("#"+name).append("svg")
+						.attr("id", "svg"+name)
+						.attr("width", w)
+						.attr("height", h)
+						.append("g")
+						.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+						
+			var legendRect = 10;
+			var legendSpacing = 4;
 			
+			legend = svg.selectAll('.legend')                     // NEW
+			  .data(["Ranger Camps","General gates","Entrances","Camping sites","Gates"])                                   // NEW
+			  .enter()                                                // NEW
+			  .append('g')                                            // NEW
+			  .attr('class', 'legend')                    
+			  .attr("transform", function(d,i){
+				  var width = legendRect + legendSpacing;
+				  var offset =  h * 2 / 3 - 100;
+				  var vert = i * (legendRect + offset -50) ;
+				  var horz = -2 * legendRect - 70;
+				  return "translate("+ (w - (w/4) - horz)+","+ (h - (h/2) - vert) +")";
+			  });
+			  
+			 legend.append("rect")
+				.attr("width",10)
+				.attr("height",10)
+				.style("fill",function(d,i){if (d=="Ranger Camps") {return "#a6cee3";}
+									else if (d == "General gates") {return "#1f78b4";}
+									else if (d == "Camping sites") {return "#33a02c";}
+									else if (d == "Gates") 		   {return "#fb9a99";}
+									else if (d == "Entrances")     {return "#b2df8a";}
+									})
+				
+			legend.append("text")
+				.attr("x", 20)
+				.attr("y", 10)
+				.attr("font-size","10px")
+				.text(function(d) {return d})
+			var simulation = d3.forceSimulation().nodes(nodesGeneral);
+			simulation.force("charge_force", d3.forceManyBody())
+						.force("center_force", d3.forceCenter(w / 3, h / 3));
+			
+			var color = d3.scaleLinear()
+						.domain([min,max])      // usa questo per cambiare i colori alle linee
+						.range(["yellow","DarkRed"]);
+			
+			var svgLinks = svg.append("g")
+							.attr("class", "links")
+							.selectAll("line")
+							.data(links)
+							.enter()
+							.append("line")
+							.style("stroke",function(d){console.log(color(d.value));return color(d.value)})
+							.attr("stroke-width", 2)
+							.style("z-index",-1);
+			
+			radius = 5;
+			
+			var node = svg.append("g")
+						//	.attr("class", "nodes")
+							.selectAll("circle")
+							.data(nodesGeneral)
+							.enter()
+							.append("circle")
+							.attr("r", radius)
+							.attr("fill", function(d){if ((d.label).indexOf("ranger") > -1) {
+												return "#a6cee3";   //ranger azzurro 
+											} else if ((d.label).indexOf("general-gate") > -1) {
+												return "#1f78b4"; // general gate blu
+											} else if ((d.label).indexOf("entrance") > -1){
+												return "#b2df8a";  //verdino entrance
+											} else if ((d.label).indexOf("camping") > -1){
+												return "#33a02c"; //verde camping
+											} else { 
+												return "#fb9a99"; //rosa gates 
+											}})
+							.on("mouseover", function(d) {		
+									tool.transition()		
+										.duration(200)		
+										.style("opacity", .9)
+										.style("left", (d3.event.pageX) + "px")		
+										.style("top", (d3.event.pageY - 28) + "px")	
+									tool.append("div").attr("id","t1").append("text").text(d.label);
+									tool.append("div").attr("id","t1").append("text").text("readings: " + d.value);
+							;})			
+							.on("mouseout", function(d) {		
+									tool.transition()		
+										.duration(500)		
+										.style("opacity", 0);
+									d3.selectAll("#t1").remove();
+							})
+							.on("click",function(d){console.log(d);});
+
+			
+			simulation.on("tick", tickActions );
+		
+			var link_force =  d3.forceLink(links)
+                        .id(function(d) {return d.label; })
+						
+			simulation.force("links",link_force)
+		
+		function tickActions() {
+				//update circle positions to reflect node updates on each tick of the simulation 
+				node.attr("cx", function(d) { return d.x = Math.max(radius, Math.min(w - radius, d.x)); })
+					.attr("cy", function(d) { return d.y = Math.max(radius, Math.min(h -radius, d.y)); });
+
+					
+				 svgLinks.attr("x1", function(d){return d.source.x; })
+						.attr("y1", function(d) { return d.source.y; })
+						.attr("x2", function(d) { return d.target.x; })
+						.attr("y2", function(d) { return d.target.y; });
+
+			}
+			  
+			var drag_handler = d3.drag()
+				.on("start", drag_start)
+				.on("drag", drag_drag)
+				.on("end", drag_end);
+				
+			function drag_start(d) {
+				  if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+				  d.fx = d.x;
+				  d.fy = d.y;
+				}
+				 
+			function drag_drag(d) {
+				  d.fx = d3.event.x;
+				  d.fy = d3.event.y;
+				}
+				 
+			function drag_end(d) {
+			  if (!d3.event.active) simulation.alphaTarget(0);
+			  d.fx = d.x;
+			  d.fy = d.y;
+			}
+
+			drag_handler(node);
+
+			var tool = d3.select("body").append("div")	
+						.attr("class", "tooltip")				
+						.style("opacity", 0);
+			
+			showInfo(name1,base);
 })
 }
+
+function showInfo(name,data){
+		var div1 = d3.select("#container").append("div").attr("id",name).attr("class","aux2");
+		div1.style("margin-left",0);
+		//div1.style("margin-right",0);
+		document.getElementById(name1).style.width="29%";
+		document.getElementById(name1).style.height="49%";
+		document.getElementById(name1).style.float="right";
+
+		var h = document.getElementById(name).clientHeight;
+		var w = document.getElementById(name).offsetWidth;
+		    w = w - 20;
+			h = h; 
+			
+		var svg = d3.select("#"+name).append("svg")
+					.attr("id", "svg"+name)
+					.attr("width", w)
+					.attr("height", h)
+					.append("g")
+					.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+		
+		var general = d3.nest()
+					.key(function(d){return d['car-type'];})
+					.entries(data)
+					.sort(function(a, b){ return d3.descending(a.values, b.values);});
+					
+		arr = [];
+		for(i=0;i<general.length;i++){
+			arr.push([general[i].key,general[i].values.length]);
+		}
+		console.log(arr);
+			var c = bb.generate({
+					  data: {
+						columns: [[arr[0][0],arr[0][1],0,0,0,0,0,0],[arr[1][0],0,arr[1][1],0,0,0,0,0],[arr[2][0],0,0,arr[2][1],0,0,0,0],[arr[3][0],0,0,0,arr[3][1],0,0,0],
+						[arr[4][0],0,0,0,0,arr[4][1],0,0],[arr[5][0],0,0,0,0,0,arr[5][1],0],[arr[6][0],0,0,0,0,0,0,arr[6][1]]],
+						type: "bar",
+						groups: [[arr[0][0],arr[1][0],arr[2][0],arr[3][0],arr[4][0],arr[5][0],arr[6][0]]], //fallo automaticamente seguyendo l'ordine di chi ha più traffico?
+					  },
+					  legend:{
+						show: false,  
+					  },
+					  tooltip: {
+						  show: false,
+					  },
+					   axis: {
+							x: {
+							  type: "category",
+						    categories: [arr[0][0],arr[1][0],arr[2][0],arr[3][0],arr[4][0],arr[5][0],arr[6][0]]
+							},
+						}, 
+						bar: {
+							width: {
+							  ratio: 0.75,
+							}
+						  },
+						title: {text: "Vehicle types in selected time period",
+											 padding: {
+												 top: 10,
+												 bottom: 10,
+											 },
+											 position: "top-center"
+										 },
+					  bindto: "#svg"+name
+					});
+
+		}
+
 
