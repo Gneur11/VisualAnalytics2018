@@ -28,7 +28,7 @@ function init(input,ele){
 	if(!!e3){
 		e3.remove();
 	}
-	if(input == "Vehicle Type"){
+	if(input == "Vehicle/Sensor Type"){
 		vt();
 	} else if(input == "Time") {
 		vtime();
@@ -776,8 +776,9 @@ function auxBar(data,name,filter){
 				obj = {"key":data[j].key,"percent":data[j].values.length};
 				arr.push(obj);
 			}
-			pieroni(arr,"aux1","% of traffic per \n vehicle type");
-			
+			console.log(data);
+			//pieroni(arr,"aux1","% of traffic per \n vehicle type");
+			radar = radaroni(data,"aux1");
 			var div = d3.select("#container").append("div").attr("id",name).attr("class","mainClass");
 			document.getElementById(name).style.float="left";
 			
@@ -877,14 +878,18 @@ function auxBar(data,name,filter){
 								d3.select(this)
 									.attr("stroke","black")
 									.attr("stroke-width",2);
+								radar.defocus();
+								radar.focus(d.key);
 							})
 					.on("mouseout", function(d,i){
 									canvas.select("#t1")
 										.remove();
 									d3.select(this)
 									.attr("stroke-width",0);	
+									radar.focus();
 					})
 					.on("click", function(d){
+										
 										gate = document.getElementById("gatebar");
 										if(!!gate){
 											gate.remove();
@@ -902,35 +907,68 @@ function auxBar(data,name,filter){
 					.attr("width", function(d, i) {
 						return x(d.values.length);
 					})
-			
-/*			var legendRect = 18;
-			var legendSpacing = 4;
-			
-			legend = canvas.selectAll('.legend')                     // NEW
-			  .data(["Park Rangers","Other"])                                   // NEW
-			  .enter()                                                // NEW
-			  .append('g')                                            // NEW
-			  .attr('class', 'legend')                    
-			  .attr("transform", function(d,i){
-				  var height = legendRect + legendSpacing;
-				  var offset = height * 2 / 2;
-				  var horz = -2 * legendRect;
-				  var vert = i * height -offset;
-				  return "translate("+ (w - 130)+","+ ((h -100) - vert) +")";
-			  });
-			  
-			 legend.append("rect")
-				.attr("width",20)
-				.attr("height",20)
-				.style("fill",function(d,i){if (d=="Park Rangers")
-									{return "#EC9787";} else {return "steelblue";}})
-				
-			legend.append("text")
-				.attr("x", 25)
-				.attr("y", 15)
-				.text(function(d) {return d})
-*/}
+}
+
+function radaroni(data,name){
+	arr = [];
+	arr.push(["x", "Ranger Stops", "General Gates", "Entrances", "Campings", "Gates"])
+	for(i=0;i<data.length;i++){
+		el = data[i].key;
+		ranger = 0;
+		entrance = 0;
+		camping = 0;
+		gate = 0;
+		general = 0;
+		for(j=0;j<data[i].values.length;j++){
+			d = data[i].values[j]["gate-name"];
+			if (d.indexOf("ranger") > -1) {
+				ranger = ranger + 1;
+			} else if (d.indexOf("general-gate") > -1) {
+				general = general + 1;				
+			} else if (d.indexOf("entrance") > -1){
+				entrance = entrance + 1;
+			} else if (d.indexOf("camping") > -1){
+				camping = camping + 1;
+			} else { 
+				gate = gate + 1;
+			}
+		}
+		arr.push([el,ranger,general,entrance,camping,gate])
+	}
+	console.log(arr);
 	
+	var div = d3.select("#container").append("div").attr("id",name).attr("class",name).style("font-size","12px");
+				document.getElementById(name).style.float="right";
+	var h = document.getElementById(name).clientHeight;
+	var w = document.getElementById(name).offsetWidth;
+	    w = w + margin.left - margin.right;
+		h = h + margin.top - 10 - margin.bottom;		
+	var svg = d3.select("#"+name).append("svg")
+			.attr("width", w)
+			.attr("height", h)
+			.attr("id","svg"+name)
+			.style("float","left")
+			.append("g")
+			.attr("transform", "translate(" + w / 2 + "," + h/2 + ")");
+	
+	var chart = bb.generate({
+				  data: {
+					x: "x",
+					columns: arr,
+					type: "radar",
+				//	labels: true
+				  },
+				  radar: {
+					level: {
+					  depth: 3,
+					  text:{show:false,},
+					}
+				  },
+				  bindto: "#svg"+name,
+				});
+	return chart;
+}	
+
 function gateBar(key,filter){
 	var margin = {top: 40, right: 20, bottom: 120, left: 80};
 	
@@ -1077,40 +1115,6 @@ function gateBar(key,filter){
 						console.log(y(d.values.length));
 						return h - y(d.values.length);
 					})
-					
-
-/*			var legendRect = 10;
-			var legendSpacing = 4;
-			
-			legend = canvas.selectAll('.legend')                     // NEW
-			  .data(["Ranger Camps","General gates","Entrances","Camping sites","Gates"])                                   // NEW
-			  .enter()                                                // NEW
-			  .append('g')                                            // NEW
-			  .attr('class', 'legend')                    
-			  .attr("transform", function(d,i){
-				  var width = legendRect + legendSpacing;
-				  var offset =  width * 3 / 2 +100;
-				  var horz = i * (legendRect + offset ) ;
-				  var vert = -2 * legendRect - 70;
-				  return "translate("+ (w - (w/4) - horz)+","+ (h - vert) +")";
-			  });
-			  
-			 legend.append("rect")
-				.attr("width",10)
-				.attr("height",10)
-				.style("fill",function(d,i){if (d=="Ranger Camps") {return "#a6cee3";}
-									else if (d == "General gates") {return "#1f78b4";}
-									else if (d == "Camping sites") {return "#33a02c";}
-									else if (d == "Gates") 		   {return "#fb9a99";}
-									else if (d == "Entrances")     {return "#b2df8a";}
-									})
-				
-			legend.append("text")
-				.attr("x", 20)
-				.attr("y", 10)
-				.attr("font-size","10px")
-				.text(function(d) {return d})
-*/			
 			//modifica pie chart esistente
 			rangerStop = 0;
 			generalGate = 0;
@@ -1970,7 +1974,22 @@ function force(name,domain) {
 							.append("line")
 							.style("stroke",function(d){console.log(color(d.value));return color(d.value)})
 							.attr("stroke-width", 2)
-							.style("z-index",-1);
+							.style("z-index",-1)
+							.on("mouseover", function(d) {		
+									tool.transition()		
+										.duration(200)		
+										.style("opacity", .9)
+										.style("left", (d3.event.pageX) + "px")		
+										.style("top", (d3.event.pageY - 28) + "px")	
+									tool.append("div").attr("id","t1").append("text").text("readings: " + d.value);
+							;})			
+							.on("mouseout", function(d) {		
+									tool.transition()		
+										.duration(500)		
+										.style("opacity", 0);
+									d3.selectAll("#t1").remove();
+							})
+
 			
 			radius = 5;
 			
@@ -2058,23 +2077,25 @@ function force(name,domain) {
 						.attr("class", "tooltip")				
 						.style("opacity", 0);
 			
-			showInfo(name1,base);
+			showInfo(name1,base,"Vehicle Types");
 })
 }
 
-function showInfo(name,data){
+function showInfo(name,data,filter){
 		var div1 = d3.select("#container").append("div").attr("id",name).attr("class","aux2");
 		div1.style("margin-left",0);
 		//div1.style("margin-right",0);
 		document.getElementById(name1).style.width="29%";
 		document.getElementById(name1).style.height="49%";
 		document.getElementById(name1).style.float="right";
-
+		
+		
+		
 		var h = document.getElementById(name).clientHeight;
 		var w = document.getElementById(name).offsetWidth;
 		    w = w - 20;
 			h = h; 
-			
+		
 		var svg = d3.select("#"+name).append("svg")
 					.attr("id", "svg"+name)
 					.attr("width", w)
