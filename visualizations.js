@@ -1,7 +1,9 @@
 var margin = {top: 40, right: 20, bottom: 50, left: 60};
 var gInput = "";
-//metti un radar chart da qualche parte per far vedere quali veicoli partecipano in quali sensori e viceversa (?)
 
+//e mettere in Vehicle ID una media o qualcosa del genere? in basso a destra, quando clicchi da i dati della macchina singola i.e. il numero 
+//di ore che è stato nel parco, la media di ore ecc e dov'è stato per lo più
+//aggiunto il filtro per lo special access (i gate), trova un modo di far vedere in dettaglio cosa facesse il tipo
 function resize (e) {
 		init(gInput);
 	};
@@ -137,13 +139,16 @@ function scatter(name,filter,auxName){
 			var format = d3.timeFormat("%y-%m-%d");
 			base.forEach(function(d,i) {   
 				var time = parseTime(d.Timestamp);
-				d.Timestamp = format(time);})
-			
+				d.Timestamp = format(time);})	
 			var everyone = d3.nest()
 					.key(function(d){return d['car-id'];})
 					.key(function(d){return d['Timestamp']})
 					.entries(data);
 			
+			var special = d3.nest()
+					.key(function(d){return d['gate-name'];})
+					.key(function(d){return d['car-type']})
+					.entries(data);		
 			var every = [];
 			for(i=0;i<everyone.length;i++){
 				var sum = 0;
@@ -157,11 +162,45 @@ function scatter(name,filter,auxName){
 				}
 				var obj = {'sum':sum,"car":car,"days":days};
 				every.push(obj);
-			}						
+			}					
 			var rangers = every.filter(function(d){if(d.car == "2P"){return d}})
 			var sameDayVisitors = every.filter(function(d){if(d.days.length == 1) {return d}});
 			var diffDayVisitors = every.filter(function(d){if (d.days.length > 1) {return d}});
 			var moreThan3 = every.filter(function(d){if(d.days.length > 2){return d}})
+			var specialAccess = d3.nest()
+					.key(function(d){return d['car-id'];})
+					.key(function(d){return d['Timestamp']})
+					.entries(data)
+					.filter(function(d){
+								present = false;
+								for (j=0;j<d.values.length;j++){
+									for(i=0;i<d.values[j].values.length;i++){
+										g = d.values[j].values[i];
+										gate = g["gate-name"];
+									//	console.log(g,gate);
+										if(gate.length < 6){
+											present = true;
+										}
+									}
+								}
+							if(present) {return d};
+					});
+			console.log(specialAccess);
+			var special = [];
+			for(i=0;i<specialAccess.length;i++){
+				var sum = 0;
+				var car;
+				var days = [];
+				for(j=0;j<specialAccess[i].values.length;j++){
+					sum = sum + specialAccess[i].values[j].values.length 
+					car = specialAccess[i].values[j].values[0]['car-type']
+					d = specialAccess[i].values[j].key;
+					days.push(d);
+				}
+				var obj = {'sum':sum,"car":car,"days":days};
+				special.push(obj);
+			}					// magari qua aggiungi qualche dettaglio per lo special access 
+			
 			var ordered;
 			if(filter == "General"){
 				ordered = every;		
@@ -173,6 +212,8 @@ function scatter(name,filter,auxName){
 				ordered = diffDayVisitors;
 			} else if (filter == "3 or more Days") {
 				ordered = moreThan3;
+			} else if (filter == "Special Access"){
+				ordered = special;
 			}
 			var div = d3.select("#container").append("div").attr("id",name).attr("class","mainClass");
 			document.getElementById(name).style.width="65%";
@@ -183,7 +224,7 @@ function scatter(name,filter,auxName){
 			    w = w + 20 - margin.right - margin.left;
 				h = h + margin.top - margin.bottom - 140;
 			
-			var filters = ["General", "Rangers", "Same Day","Different Days","3 or more Days"];
+			var filters = ["General", "Rangers", "Same Day","Different Days","3 or more Days","Special Access"];
 			
 			var hid = false;
 			
@@ -336,6 +377,13 @@ function scatter(name,filter,auxName){
 						data = moreThan3;
 						//currentGraphs.filterB = selectValue;
 						max = d3.max(moreThan3,function(d){return d.sum})+5;
+						x = d3.scaleLinear().range([0, w-margin.right])
+						y = d3.scaleLinear().range([h,0]);
+						x.domain([0,data.length-1]);
+						y.domain([0,max]);
+					}  else if (selectValue == "Special Access"){ //
+						data = special;
+						max = d3.max(special,function(d){return d.sum})+5;
 						x = d3.scaleLinear().range([0, w-margin.right])
 						y = d3.scaleLinear().range([h,0]);
 						x.domain([0,data.length-1]);
@@ -752,12 +800,14 @@ function pieroni(array,name,title){
 		onout: function(d, i) {
 					document.getElementById("temp").remove();
 					d3.select("#gatebar").selectAll("rect").style("opacity",1);
-	   }
+	   },
+	    onclick: function(d){},
 	  },
 		legend:{
 			show: true,
 			position:'right',
-			onover: function(d,i){alert(d)}
+			onover: function(d,i){alert(d)},
+			item: {onclick: function(d){},},
 		},
 		donut: {
 		title: title,
@@ -963,6 +1013,8 @@ function radaroni(data,name){
 					  depth: 3,
 					  text:{show:false,},
 					}
+				  },
+				  legend:{item:{onclick: function(d){},},
 				  },
 				  bindto: "#svg"+name,
 				});
