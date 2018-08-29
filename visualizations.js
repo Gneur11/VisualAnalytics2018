@@ -1,9 +1,8 @@
 var margin = {top: 40, right: 20, bottom: 50, left: 60};
 var gInput = "";
 
-//e mettere in Vehicle ID una media o qualcosa del genere? in basso a destra, quando clicchi da i dati della macchina singola i.e. il numero 
-//di ore che è stato nel parco, la media di ore ecc e dov'è stato per lo più
-//aggiunto il filtro per lo special access (i gate), trova un modo di far vedere in dettaglio cosa facesse il tipo
+//metti nella view in basso a destra dopo aver cliccato: ID, numero di reading e sensori dov'è stato letto.
+//metti anche una nuova view sotto in caso
 function resize (e) {
 		init(gInput);
 	};
@@ -30,6 +29,12 @@ function init(input,ele){
 	if(!!e3){
 		e3.remove();
 	}
+	e4 = document.getElementById("centerContainer")
+	e5 = document.getElementById("leftContainer")
+	if(!!e4){
+		e4.remove();
+		e5.remove();
+	}
 	if(input == "Vehicle/Sensor Type"){
 		vt();
 	} else if(input == "Time") {
@@ -54,8 +59,7 @@ d3.selection.prototype.moveToBack = function() {
     };
 
 
-function timeForScatter(name){  //forse meglio heatmap? o qualcos'altro? non è bbello così... forse solo un elenco di giorni nell'angolino in basso a destra?
-								//o un bar chart con il mese in cui sono avvenute le visite?
+function timeForScatter(name){ 
 	d3.csv("Lekagul Sensor Data.csv").then(function(data){
 			base = data;
 			var ordered = d3.nest()
@@ -136,6 +140,7 @@ function scatter(name,filter,auxName){
 	d3.csv("Lekagul Sensor Data.csv").then(function(data){
 			var base = data;
 			var parseTime = d3.timeParse("%Y-%m-%d %H:%M:%S");
+			var parseTime = d3.timeParse("%Y-%m-%d %H:%M:%S");
 			var format = d3.timeFormat("%y-%m-%d");
 			base.forEach(function(d,i) {   
 				var time = parseTime(d.Timestamp);
@@ -154,13 +159,17 @@ function scatter(name,filter,auxName){
 				var sum = 0;
 				var car;
 				var days = [];
+				var id = "";
+				var raw = [];
 				for(j=0;j<everyone[i].values.length;j++){
+					raw.push(everyone[i].values[j].values);
 					sum = sum + everyone[i].values[j].values.length 
 					car = everyone[i].values[j].values[0]['car-type']
 					d = everyone[i].values[j].key;
+					id = everyone[i].values[j].values[0]["car-id"];
 					days.push(d);
 				}
-				var obj = {'sum':sum,"car":car,"days":days};
+				var obj = {'sum':sum,"car":car,"days":days,"id":id,"raw":raw};
 				every.push(obj);
 			}					
 			var rangers = every.filter(function(d){if(d.car == "2P"){return d}})
@@ -185,19 +194,22 @@ function scatter(name,filter,auxName){
 								}
 							if(present) {return d};
 					});
-			console.log(specialAccess);
 			var special = [];
 			for(i=0;i<specialAccess.length;i++){
 				var sum = 0;
 				var car;
 				var days = [];
+				var id = "";
+				var raw = [];
 				for(j=0;j<specialAccess[i].values.length;j++){
+					raw.push(specialAccess[i].values[j].values);
 					sum = sum + specialAccess[i].values[j].values.length 
 					car = specialAccess[i].values[j].values[0]['car-type']
 					d = specialAccess[i].values[j].key;
+					id = specialAccess[i].values[j].values[0]["car-id"];
 					days.push(d);
 				}
-				var obj = {'sum':sum,"car":car,"days":days};
+				var obj = {'sum':sum,"car":car,"days":days,"id":id,"raw":raw};
 				special.push(obj);
 			}					// magari qua aggiungi qualche dettaglio per lo special access 
 			
@@ -218,11 +230,11 @@ function scatter(name,filter,auxName){
 			var div = d3.select("#container").append("div").attr("id",name).attr("class","mainClass");
 			document.getElementById(name).style.width="65%";
 			document.getElementById(name).style.float="left";
-			document.getElementById(name).style.height="99%";
+			document.getElementById(name).style.height="54%";
 			var h = document.getElementById(name).clientHeight;
 			var w = document.getElementById(name).offsetWidth;
 			    w = w + 20 - margin.right - margin.left;
-				h = h + margin.top - margin.bottom - 140;
+				h = h + margin.top - margin.bottom - 100;
 			
 			var filters = ["General", "Rangers", "Same Day","Different Days","3 or more Days","Special Access"];
 			
@@ -236,9 +248,9 @@ function scatter(name,filter,auxName){
 					.attr("id","showButton")
 					.style("background-color","#38B6FF")
 					.style("border","none")
-					.style("margin-top","20px")
-					.style("margin-left","20px")
-					.style("margin-right","20px")
+					.style("margin-top","10px")
+					.style("margin-left","10px")
+					.style("margin-right","10px")
 					.style("float","right")
 					.style("color","white")
 					.attr("type","button")
@@ -263,7 +275,8 @@ function scatter(name,filter,auxName){
 							.attr("id","sel")
 							.attr('class','select')
 							.style("float","left")
-							.style("margin","20px")
+							.style("margin-top","10px")
+							.style("margin-left","10px")
 							.on('change',onchange)
 
 			var options = s
@@ -326,13 +339,21 @@ function scatter(name,filter,auxName){
 					.attr("cy", function (d,i) {return y(d.sum);} )
 					.attr("r", 2)
 					.attr("fill", "lightgray")
-					.on("click",function(d){
+					.on("click",function(d){d3.select(this).moveToFront();
+											d3.selectAll("circle").style("stroke","none");
+											d3.select(this).style("stroke","black");
+											d3.select(this).style("stroke-width","1px");
 											day = document.getElementById("aux2");
 											img = document.getElementById("svgaux2")
+											i = document.getElementById("leftContainer")
+											ig = document.getElementById("centerContainer")
 												if(!!day){
 														img.remove();
 														day.remove();
+														i.remove();
+														ig.remove();
 											}
+											vehicleInfo(d);
 											dayMonthBar(d.days,"aux2");
 											})
 					.on("mouseover",function(d){
@@ -390,8 +411,12 @@ function scatter(name,filter,auxName){
 						y.domain([0,max]);
 					} 
 					day = document.getElementById("aux2");
+					i = document.getElementById("leftContainer")
+					ig = document.getElementById("centerContainer")
 					if(!!day){
 							day.remove();
+							i.remove();
+							ig.remove();
 					}
 					svg.selectAll("circle")
 						.remove()
@@ -406,14 +431,22 @@ function scatter(name,filter,auxName){
 						.attr("cy", function (d,i) {return y(d.sum);} )
 						.attr("r", function(d) {if (filter == "3 or more Days") {return 3.5} else {return 2}}) //non so perchè non va
 						.attr("fill", "lightgray")
-						.on("click",function(d){
-												day = document.getElementById("aux2");
-												img = document.getElementById("svgaux2")
+						.on("click",function(d){d3.select(this).moveToFront();
+											d3.selectAll("circle").style("stroke","none");
+											d3.select(this).style("stroke","black");
+											d3.select(this).style("stroke-width","1px");
+											day = document.getElementById("aux2");
+											img = document.getElementById("svgaux2")
+											i = document.getElementById("leftContainer")
+											ig = document.getElementById("centerContainer")
 												if(!!day){
 														img.remove();
 														day.remove();
-												}
-												dayMonthBar(d.days,"aux2");
+														i.remove();
+														ig.remove();
+											}
+											vehicleInfo(d);
+											dayMonthBar(d.days,"aux2");
 											})
 					.on("mouseover",function(d){d3.select(this).attr("r",5)})
 					.on("mouseout",function(d){if (filter == "3 or more Days") {
@@ -449,7 +482,7 @@ function scatter(name,filter,auxName){
 						} else if (data[i].car == "3"){
 							t3 = t3 +1;
 						} else if (data[i].car == "4"){
-							t4 = t4 +1;
+						t4 = t4 +1;
 						} else if (data[i].car == "5"){
 							t5 = t5 +1;
 						} else if (data[i].car == "6"){
@@ -475,6 +508,168 @@ function scatter(name,filter,auxName){
 	
     var chart = gauge("aux1",ordered);	}
 	)}        
+
+//add details for click on vehicle scatter
+function vehicleInfo(data){
+	console.log(data);
+	var left = d3.select("#container").append("div").attr("id","leftContainer").attr("class","mainClass");
+		document.getElementById("leftContainer").style.width="34.2%";
+		document.getElementById("leftContainer").style.float="left";
+		document.getElementById("leftContainer").style.height="43%";
+	var hl = document.getElementById("leftContainer").clientHeight;
+	var wl = document.getElementById("leftContainer").offsetWidth;
+	//    wl = wl + 20 - margin.right - margin.left;
+	//	hl = hl + margin.top - margin.bottom - 140;
+	var center = d3.select("#container").append("div").attr("id","centerContainer").attr("class","mainClass");
+		document.getElementById("centerContainer").style.width="34.5%";
+		document.getElementById("centerContainer").style.float="left";
+		document.getElementById("centerContainer").style.height="43%";	
+		m = [["ranger-stops",0],["entrances",0],["campings",0],["gate",0],["general-gates",0]]
+	var hc = document.getElementById("centerContainer").clientHeight;
+	var wc = document.getElementById("centerContainer").offsetWidth - 10;
+		for(j=0;j<data.raw.length;j++){
+			dat = data.raw[j];
+			for(i=0;i<dat.length;i++){
+				d = dat[i]["gate-name"];
+				if (d.indexOf("ranger") > -1) {
+					m[0][1]++;
+				} else if (d.indexOf("general-gate") > -1) {
+					m[4][1]++;
+				} else if (d.indexOf("entrance") > -1){
+					m[1][1]++;
+				} else if (d.indexOf("camping") > -1){
+					m[2][1]++;
+				} else { 
+					m[3][1]++;
+				}
+			}
+		}
+		m.sort(sortFunction);
+		function sortFunction(a, b) {
+			if (a[1] === b[1]) {
+				return 0;
+			}
+			else {
+				return (a[1] > b[1]) ? -1 : 1;
+			}
+		}
+		console.log(m);
+		var d = d3.select("#centerContainer").append("svg")
+				.attr("width", wc)
+				.attr("height", hc)
+				.attr("id","svgcenter")
+				.append("g")
+				.attr("transform", "translate(" + wc / 2 + "," + hc/2 + ")");
+				
+			var c = bb.generate({
+					  data: {
+						columns: [[m[0][0],m[0][1],0,0,0,0],[m[1][0],0,m[1][1],0,0,0],[m[2][0],0,0,m[2][1],0,0],[m[3][0],0,0,0,m[3][1],0],[m[4][0],0,0,0,0,m[4][1]]],
+						type: "bar",
+						groups: [[m[0][0],m[1][0],m[2][0],m[3][0],m[4][0]]], //fallo automaticamente seguyendo l'ordine di chi ha più traffico?
+						color: function(d){return "steelblue"},
+					  },
+					  legend:{
+						show: false,  
+					  },
+					  tooltip: {
+						  show: false,
+					  },
+					  
+					   axis: {
+							x: {
+							  type: "category",
+						    categories: [m[0][0],m[1][0],m[2][0],m[3][0],m[4][0]]
+							},
+						}, 
+						bar: {
+							width: {
+							  ratio: 0.5
+							}
+						  },
+						title: {text: "Number of readings for selected vehicle",
+											 padding: {
+												 top: 10,
+												 bottom: 10,
+											 },
+											 position: "top-center"
+										 },
+					  bindto: "#svgcenter"
+					});
+
+		vehicleForce(data,left);
+}	
+
+function vehicleForce(data,name){
+		paths = [];
+		gates = [];
+		for(j=0;j<data.raw.length;j++){
+			dat = data.raw[j];
+			p = [];
+			for(i=0;i<dat.length;i++){
+				p.push(dat[i]["gate-name"]);
+				if(!gates.includes(dat[i]["gate-name"])){
+					gates.push(dat[i]["gate-name"]);
+				}
+			}
+			paths.push(p);
+		}
+		console.log(paths,gates);
+		temp = [];
+		counter = new Array(gates.length).fill(0);
+		for(i=0;i<paths.length;i++){
+			for(j=0;j<paths[i].length;j++){
+				curr = paths[j] //non ho voglia trova qualcosa da mettere e fanculo
+			}
+		}
+		/*
+		temp = [];
+		for(i=0;i<paths.length;i++){
+			for(j=0;j<paths[i].length - 1;j++){
+				 temp.push([paths[i][j],paths[i][j+1]]);				
+			}
+		}
+		
+		
+		matrix = new Array(temp.length).fill(0);
+		
+		for(i=0;i<temp.length;i++){
+			for(j=0;j<temp.length;j++){
+				if(temp[j].includes(temp[i][0]) && temp[j].includes(temp[i][1])){
+					matrix[i] = matrix[i]+1;
+					
+				}
+			}
+		}
+		console.log(matrix);
+		
+		
+	/*	
+		for(i=0;i<temp.length;i++){
+			for(j=0;j<temp.length;j++){
+				if((temp[i][0] == temp[j][0] && temp[i][1] == temp[j][1]) || (temp[i][0] == temp[j][1] && temp[i][1] == temp[j][0])){
+					matrix[i] = matrix[i]+ 1;
+					//temp.splice(j,1);
+				}
+			}
+		} 
+		links = [];
+		for(i=0;i<temp.length;i++){
+			obj = {"source": temp[i][0],"target":temp[i][1],"value":matrix[i]};
+			links.push(obj);
+		}
+		for(i=0;i<links.length;i++){
+			for(j=i;j<links.length;j++){
+				if((links[i].source == links[j].source && links[i].target == links[j].target) || (links[i].target == links[j].source && links[i].source == links[j].target)){
+				links[i].value = links[i].value + links[j].value;
+				links.splice(j,1);
+				}
+			}
+		}
+		console.log(links);
+		*/
+}
+
+
 
 function gauge(name,data){  //scatter controller
 	t2P = 0;
@@ -504,7 +699,7 @@ function gauge(name,data){  //scatter controller
 
 	var div = d3.select("#container").append("div").attr("id",name).attr("class",name).style("font-size","12px");
 				document.getElementById(name).style.float="right";
-				document.getElementById(name).style.height="49%";
+				document.getElementById(name).style.height="54%";
 				document.getElementById(name).style.width="34%";
 	var h = document.getElementById(name).clientHeight;
 	var w = document.getElementById(name).offsetWidth;
@@ -539,7 +734,6 @@ var d = d3.select("#"+name).append("svg")
 								} else {
 									clicked[val+"t"] = 0;
 								}
-								console.log(clicked);
 			svg = d3.select("#svgmain")
 			svg.selectAll("circle")
 				.filter(function(c){
@@ -560,6 +754,10 @@ var d = d3.select("#"+name).append("svg")
 	  donut:{
 		  title: "% of \n vehicle type"
 	  },
+	  legend:{
+		  item: { onclick:  function(d, i) {},
+		  }
+	  },
 	  bindto: "#d"+name
 	});
 	chart.load({columns:c});
@@ -575,14 +773,12 @@ function dayMonthBar(days,name){
 		var time = parseTime(days[i]);
 		d[i] = format(time);
 		}						
-	console.log(d);
 	base = d[0];
 	counter = 1;
 	x = [];
 	if(d.length == 1){
 		base = d[0];
 		counter = 1;
-		console.log("lenght 1")
 		x.push([base,counter])
 	} else {
 		j = 1;
@@ -590,27 +786,23 @@ function dayMonthBar(days,name){
 			if(d[j] == base){
 				counter = counter + 1;
 				j++;
-				console.log("d=base",counter)
 			} else {
 				x.push([base,counter]);
 				base = d[j];
 				counter = 1;
-				console.log("diverso");
 				j++;
 			}
 		} while (j < d.length);
 		x.push([base,counter]);
 	}
-	console.log(x);
 	arr = []
 	for(i=0;i<x.length;i++){
 		arr.push(x[i]);
 	}
-	console.log(arr);
 	var div = d3.select("#container").append("div").attr("id",name).attr("class",name).style("font-size","12px");
 			document.getElementById(name).style.float="right";
-			document.getElementById(name).style.height="49%";
-			document.getElementById(name).style.width="34%";
+			document.getElementById(name).style.height="43%";
+			document.getElementById(name).style.width="30%";
 	var h = document.getElementById(name).clientHeight;
 	var w = document.getElementById(name).offsetWidth;
 	h = h - margin.top;
@@ -659,11 +851,16 @@ function dayMonthBar(days,name){
 
 function vID(){
 	main = document.getElementById("main");
+	i = document.getElementById("leftContainer")
+	ig = document.getElementById("centerContainer")
 	if(!!main){
 		main.remove();
 	}
+	if(!!i){
+		i.remove();
+		ig.remove();
+	}
 	scatter("main","General","aux1");
-	//timeForScatter("aux2");
 	}
 
 function bar(name,filter){
@@ -1355,7 +1552,7 @@ function multiLine(data,name) { // va bene, vedi se aggiungere qualcosa tipo l'i
 											temp.push([filtered[i].key,map])
 										}
 									arr = [{"key":"ranger-stops","val":rangerStop},{"key":"general-gates","val":generalGate},{"key":"entrances","val":entrance},{"key":"gates","val":gate},{"key":"campings","val":camping}]
-									week = gateWeek(temp,arr,m[d.index],"aux2");// prendi gate bar e copiacela dentro che è meglio prolly
+									week = gateWeek(temp,arr,m[d.index],"aux2");
 									console.log(temp);
 									setTimeout(function() {g.unload();	d3.select("#Month").text("Readings per day of the week (" + m[d.index] + ")");},1000);	
 									setTimeout(function() {g.load({columns:matrix});clicked = false;},1500)
@@ -2017,14 +2214,22 @@ function force(name,domain) {
 			var color = d3.scaleLinear()
 						.domain([min,max])      // usa questo per cambiare i colori alle linee
 						.range(["yellow","DarkRed"]);
-			
+			console.log(links);
+			for(i=0;i<links.length;i++){
+				for(j=i;j<links.length;j++){
+					if((links[i].source == links[j].target) && (links[i].target == links[j].source)){
+						links[i].value = links[i].value + links[j].value;
+						links.splice(j,1);
+					}
+				}
+			}
 			var svgLinks = svg.append("g")
 							.attr("class", "links")
 							.selectAll("line")
 							.data(links)
 							.enter()
 							.append("line")
-							.style("stroke",function(d){console.log(color(d.value));return color(d.value)})
+							.style("stroke",function(d){return color(d.value)})
 							.attr("stroke-width", 2)
 							.style("z-index",-1)
 							.on("mouseover", function(d) {		
