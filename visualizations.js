@@ -234,7 +234,7 @@ function scatter(name,filter,auxName){
 			var h = document.getElementById(name).clientHeight;
 			var w = document.getElementById(name).offsetWidth;
 			    w = w + 20 - margin.right - margin.left;
-				h = h + margin.top - margin.bottom - 100;
+				h = h + margin.top - margin.bottom - 120;
 			
 			var filters = ["General", "Rangers", "Same Day","Different Days","3 or more Days","Special Access"];
 			
@@ -910,7 +910,7 @@ function bar(name,filter){
 							.rollup(function (v) {return v.length;}) //va bene così
 							.entries(base)
 							//	.sort(function(a, b){ return d3.descending(a.values, b.values);});
-							multiLine(ordered,name);
+							multiLine(ordered,name,filter);
 		}
 	})
 
@@ -1028,9 +1028,7 @@ function auxBar(data,name,filter){
 			radar = radaroni(data,"aux1");
 			var div = d3.select("#container").append("div").attr("id",name).attr("class","mainClass");
 			document.getElementById(name).style.float="left";
-			
-			var filters = ["General", "2015", "2016","Monthly"];
-		
+					
 			var s = d3.select('#'+name)
 						  .append('select')
 							.attr("id","s")
@@ -1039,12 +1037,14 @@ function auxBar(data,name,filter){
 							.style("margin-left","10px")
 							.on('change',onchange)
 			
+			var filters = ["General", "2015", "2016","Monthly"];
+
 			var options = s
 					.selectAll('option')
 					.data(filters)
 					.enter()
 					.append('option')
-					.text(function (d) { return d})		//mostra sempre general anche se hai altri filtri
+					.text(function (d) { return d})	
 					.property("selected", function(d){return d == filter});
 					
 			var h = document.getElementById(name).clientHeight;
@@ -1106,7 +1106,7 @@ function auxBar(data,name,filter){
 				  .attr("dy", "1em")
 				  .style("text-anchor", "middle")
 				  .text("Vehicle Type");      
-				
+			lastFocused = "";	
 			canvas.selectAll("rect")
 					.data(data)
 					.enter()
@@ -1115,28 +1115,31 @@ function auxBar(data,name,filter){
 					.attr("y", function(d,i){return y(d.key)})
 					.attr("fill","steelblue") // cambiare sto colore o no?
 					.on("mouseover", function(d,i){
-								 canvas.append("text")
+								canvas.append("text")
 									 .attr('id','t1')
 									 .text(d.values.length)
 									 .attr("y", y(d.key)+ y.bandwidth()/2)
 									.attr("x", x(d.values.length) + 5)
 									.style("font-size","10px")
 									.style("text-anchor","center")
-								d3.select(this)
-									.attr("stroke","black")
-									.attr("stroke-width",2);
+								d3.select(this).attr("fill","#0091E5");
 								radar.defocus();
 								radar.focus(d.key);
 							})
 					.on("mouseout", function(d,i){
 									canvas.select("#t1")
 										.remove();
-									d3.select(this)
-									.attr("stroke-width",0);	
-									radar.focus();
+									d3.select("#"+name).selectAll("rect").attr("fill","steelblue");
+									radar.focus(d.key);
+									radar.focus(lastFocused);
 					})
 					.on("click", function(d){
-										
+										d3.select("#"+name).selectAll("rect").style("opacity",0.2);
+										d3.select(this).style("opacity",1);
+										d3.select(this).attr("fill","#0091E5");
+										radar.defocus();
+										radar.focus(d.key);
+										lastFocused = d.key;
 										gate = document.getElementById("gatebar");
 										if(!!gate){
 											gate.remove();
@@ -1352,12 +1355,11 @@ function gateBar(key,filter){
 													  .attr("x", x(d.key))
 													  .attr("y", y(d.values.length)-(w/100))
 													  .style("font-size","10px")
-												d3.select(this)
-													.attr("stroke","black")
-													.attr("stroke-width",2);
+												d3.select("#gatebar").selectAll("rect").style("opacity",0.2);
+												d3.select(this).style("opacity",1);
 									})
 					.on("mouseout",function(d){	document.getElementById("t").remove();
-												d3.select(this).attr("stroke-width",0)})
+												d3.select("#gatebar").selectAll("rect").style("opacity",1);})
 					.transition()
 					.duration(250)
 					.attr("height", function(d, i) {
@@ -1388,12 +1390,12 @@ function gateBar(key,filter){
 	});	
 }
 
-function multiLine(data,name) { // va bene, vedi se aggiungere qualcosa tipo l'istogramma per veicolo per giorno della settimana
+function multiLine(data,name,filter) { 
 			var div = d3.select("#container").append("div").attr("id",name).attr("class","mainClass");
 			document.getElementById(name).style.width="57%";
-			document.getElementById(name).style.height="98%";
+			document.getElementById(name).style.height="100%";
 			document.getElementById(name).style.float="left";
-			var h = document.getElementById(name).clientHeight;
+			var h = document.getElementById(name).clientHeight - 40;
 			var w = document.getElementById(name).clientWidth - margin.right - 20;
 			var cols = [];
 			var months = [];
@@ -1459,13 +1461,28 @@ function multiLine(data,name) { // va bene, vedi se aggiungere qualcosa tipo l'i
 					line6.push(+data[6].values[j].value);
 				}			
 			months.unshift("x");
+			var s = d3.select('#'+name)
+						.append('select')
+						.attr("id","s")
+						.attr('class','select')
+						.style("margin-top","10px")
+						.style("margin-left","10px")
+						.on('change',onchange)
 			var svg = d3.select("#"+name).append("svg")
 					.attr("id", "svg"+name)
 					.attr("width", w)
 					.attr("height", h)
 					.append("g")
 					.attr("transform", "translate(" + margin.left  + "," + margin.top + ")");
-		
+			
+			var filters = ["General", "2015", "2016","Monthly"];
+			var options = s
+					.selectAll('option')
+					.data(filters)
+					.enter()
+					.append('option')
+					.text(function (d) { return d})	
+					.property("selected", function(d){return d == filter});
 			var chart = bb.generate({
 				  data: {
 					x: "x",
@@ -1474,18 +1491,6 @@ function multiLine(data,name) { // va bene, vedi se aggiungere qualcosa tipo l'i
 					"2016-02-01","2016-03-01","2016-04-01","2016-05-01"],
 					line0,line1,line2,line3,line4,line5,line6
 					],
-				 tooltip: {
-						show: true,
-						 grouped: false,
-						 format: {
-							 title: function(x) { return "Data " + x; },
-							 name: function(name, ratio, id, index) { return name; },
-							 value: function(value, ratio, id, index) { return ratio; }
-						 },
-						 position: function(data, width, height, element) {
-							 return {top: 0, left: 0}
-						 },
-					 },
 				  onclick: function(d, i) { if(clicked == false) {
 								clicked = true;
 								d3.csv("Lekagul Sensor Data.csv").then(function(data){
@@ -1551,7 +1556,16 @@ function multiLine(data,name) { // va bene, vedi se aggiungere qualcosa tipo l'i
 											}
 											temp.push([filtered[i].key,map])
 										}
-									arr = [{"key":"ranger-stops","val":rangerStop},{"key":"general-gates","val":generalGate},{"key":"entrances","val":entrance},{"key":"gates","val":gate},{"key":"campings","val":camping}]
+									arr = [["ranger-stops",rangerStop],["general-gates",generalGate],["entrances",entrance],["gates",gate],["campings",camping]]
+									arr.sort(sortFunction);
+									function sortFunction(a, b) {
+										if (a[1] === b[1]) {
+											return 0;
+										}
+										else {
+											return (a[1] > b[1]) ? -1 : 1;
+										}
+									}
 									week = gateWeek(temp,arr,m[d.index],"aux2");
 									console.log(temp);
 									setTimeout(function() {g.unload();	d3.select("#Month").text("Readings per day of the week (" + m[d.index] + ")");},1000);	
@@ -1560,6 +1574,10 @@ function multiLine(data,name) { // va bene, vedi se aggiungere qualcosa tipo l'i
 									}
 				  }
 				  },
+				  tooltip: {
+						show: true,
+						 grouped: false,
+					 },
 				axis: {
 					x: {
 					  type: "timeseries",
@@ -1578,10 +1596,10 @@ function multiLine(data,name) { // va bene, vedi se aggiungere qualcosa tipo l'i
 					legend: {
 						item: {onclick: function (d) {chart.toggle(d);g.toggle(d); 
 														if(lineLegendShow[d]){ 
-															removeType(d,week,temp)
+															week = removeType(d,week,temp)
 															lineLegendShow[d] = false;
 														} else {
-															addType(d,week,temp)
+															week = addType(d,week,temp)
 															lineLegendShow[d] = true;
 													}},
 								onover: function(d) {
@@ -1758,24 +1776,11 @@ function gateWeek(data,arr,month,name){
 				
 			var c = bb.generate({
 					  data: {
-						columns: [[arr[0].key,arr[0].val,0,0,0,0],[arr[1].key,0,arr[1].val,0,0,0],[arr[2].key,0,0,arr[2].val,0,0],[arr[3].key,0,0,0,arr[3].val,0],[arr[4].key,0,0,0,0,arr[4].val]],
+						columns: [[arr[0][0],arr[0][1],0,0,0,0],[arr[1][0],0,arr[1][1],0,0,0],[arr[2][0],0,0,arr[2][1],0,0],[arr[3][0],0,0,0,arr[3][1],0],[arr[4][0],0,0,0,0,arr[4][1]]],
 						type: "bar",
-						groups: [[arr[0].key,arr[1].key,arr[2].key,arr[3].key,arr[4].key]], //fallo automaticamente seguyendo l'ordine di chi ha più traffico?
-						color: function(color,d){if(name=="aux2")
-									{if(d.id == "ranger-stops"){
-													return "#a6cee3";
-												     } else if(d.id == "general-gates") {
-														return "#1f78b4";
-													 } else if(d.id == "entrances"){
-														return "#b2df8a";
-													 } else if(d.id == "campings"){
-														return "#33a02c";
-													 } else {
-														return "#fb9a99";
-									}}
-								 else {
-									return color;
-									}
+						groups: [[arr[0][0],arr[1][0],arr[2][0],arr[3][0],arr[4][0]]], //fallo automaticamente seguyendo l'ordine di chi ha più traffico?
+						color: function(color,d){
+								return "steelblue";
 								},
 					  },
 					  legend:{
@@ -1788,7 +1793,7 @@ function gateWeek(data,arr,month,name){
 					   axis: {
 							x: {
 							  type: "category",
-						    categories: [arr[0].key,arr[1].key,arr[2].key,arr[3].key,arr[4].key]
+						    categories: [arr[0][0],arr[1][0],arr[2][0],arr[3][0],arr[4][0]]
 							},
 						}, 
 						bar: {
@@ -1811,7 +1816,7 @@ function gateWeek(data,arr,month,name){
 	
 
 //aggiorna il grafico di gate week togliendo i tipi di macchine deselezionati nelle altre legend
-function removeType(type,graph,data){
+function removeType(type,graph,data,month){
 	console.log(data);
 	console.log(graph.data());
 	var rangers = 0,
@@ -1819,7 +1824,7 @@ function removeType(type,graph,data){
 		entrances = 0,
 		gates = 0,
 		campings = 0;
-	for(i=0;i<data.length;i++){ //qualcosa non quadra fortissimo qua
+	for(i=0;i<data.length;i++){ 
 		if ((data[i][0]).indexOf("ranger") > -1) {			//questi sono il numero di visite all'interno dei sensori dei ranger per il tipo di macchina type
 					rangers = rangers + data[i][1][type];
 				//	console.log(data[i][1], data[i][1][type], type);
@@ -1856,11 +1861,68 @@ function removeType(type,graph,data){
 				ga = d[j].values[j].value - gates;
 		}		
 	}
-	console.log("d",d);
+	//console.log("d",d);
 	console.log("valori da caricare dopo aver tolto",r,ga,e,c,ge); //occhio che forse lo chiama quando non deve
-	arr = [["ranger-stops",r,0,0,0,0],["general-gates",0,ge,0,0,0],["entrances",0,0,e,0,0],["gates",0,0,0,ga,0],["campings",0,0,0,0,c]]
-	graph.unload();
-	graph.load({columns:arr});	
+	//arr = [["ranger-stops",r,0,0,0,0],["general-gates",0,ge,0,0,0],["entrances",0,0,e,0,0],["gates",0,0,0,ga,0],["campings",0,0,0,0,c]]
+	arr = [["ranger-stops",r],["general-gates",ge],["entrances",e],["gates",ga],["campings",c]]
+	arr.sort(sortFunction);
+		function sortFunction(a, b) {
+			if (a[1] === b[1]) {
+				return 0;
+			}
+			else {
+				return (a[1] > b[1]) ? -1 : 1;
+			}
+		}
+		document.getElementById("svgaux2").remove();
+		var h = document.getElementById("aux2").clientHeight;
+		var w = document.getElementById("aux2").offsetWidth;
+					w = w - margin.right;
+					h = h;
+		var d = d3.select("#aux2").append("svg")
+				.attr("width", w)
+				.attr("height", h)
+				.attr("id","svgaux2")
+				.append("g")
+				.attr("transform", "translate(" + w / 2 + "," + h/2 + ")");
+				var c = bb.generate({
+					  data: {
+						columns: [[arr[0][0],arr[0][1],0,0,0,0],[arr[1][0],0,arr[1][1],0,0,0],[arr[2][0],0,0,arr[2][1],0,0],[arr[3][0],0,0,0,arr[3][1],0],[arr[4][0],0,0,0,0,arr[4][1]]],
+						type: "bar",
+						groups: [[arr[0][0],arr[1][0],arr[2][0],arr[3][0],arr[4][0]]], //fallo automaticamente seguyendo l'ordine di chi ha più traffico?
+						color: function(color,d){
+								return "steelblue";
+								},
+					  },
+					  legend:{
+						show: false,  
+					  },
+					  tooltip: {
+						  show: false,
+					  },
+					  
+					   axis: {
+							x: {
+							  type: "category",
+						    categories: [arr[0][0],arr[1][0],arr[2][0],arr[3][0],arr[4][0]]
+							},
+						}, 
+						bar: {
+							width: {
+							  ratio: 0.5
+							}
+						  },
+						title: {text: "Number of readings per sensor type in " ,//+ month,
+											 padding: {
+												 top: 10,
+												 bottom: 10,
+											 },
+											 position: "top-center"
+										 },
+					  bindto: "#svgaux2",
+					});
+				console.log(c.data());
+				return c;
 }
 
 function addType(type,graph,data){
@@ -1902,11 +1964,67 @@ function addType(type,graph,data){
 				ga = d[j].values[j].value + gates;
 		}		
 	}
-	console.log("d",d);
-	console.log("valori da caricare dopo aver aggiunto",r,ga,e,c,ge);
-	arr = [["ranger-stops",r,0,0,0,0],["general-gates",0,ge,0,0,0],["entrances",0,0,e,0,0],["gates",0,0,0,ga,0],["campings",0,0,0,0,c]]
-	graph.unload();
-	graph.load({columns:arr});   //la scala va a puttane se schiacci tante votle le cose, probabilmente i valori tornano ok ma l'asse no.
+//	console.log("d",d);
+//	console.log("valori da caricare dopo aver aggiunto",r,ga,e,c,ge);
+	arr = [["ranger-stops",r],["general-gates",ge],["entrances",e],["gates",ga],["campings",c]]
+	arr.sort(sortFunction);
+		function sortFunction(a, b) {
+			if (a[1] === b[1]) {
+				return 0;
+			}
+			else {
+				return (a[1] > b[1]) ? -1 : 1;
+			}
+		}
+		document.getElementById("svgaux2").remove();
+		var h = document.getElementById("aux2").clientHeight;
+		var w = document.getElementById("aux2").offsetWidth;
+					w = w - margin.right;
+					h = h;
+		var d = d3.select("#aux2").append("svg")
+				.attr("width", w)
+				.attr("height", h)
+				.attr("id","svgaux2")
+				.append("g")
+				.attr("transform", "translate(" + w / 2 + "," + h/2 + ")");
+				var c = bb.generate({
+					  data: {
+						columns: [[arr[0][0],arr[0][1],0,0,0,0],[arr[1][0],0,arr[1][1],0,0,0],[arr[2][0],0,0,arr[2][1],0,0],[arr[3][0],0,0,0,arr[3][1],0],[arr[4][0],0,0,0,0,arr[4][1]]],
+						type: "bar",
+						groups: [[arr[0][0],arr[1][0],arr[2][0],arr[3][0],arr[4][0]]], //fallo automaticamente seguyendo l'ordine di chi ha più traffico?
+						color: function(color,d){
+								return "steelblue";
+								},
+					  },
+					  legend:{
+						show: false,  
+					  },
+					  tooltip: {
+						  show: false,
+					  },
+					  
+					   axis: {
+							x: {
+							  type: "category",
+						    categories: [arr[0][0],arr[1][0],arr[2][0],arr[3][0],arr[4][0]]
+							},
+						}, 
+						bar: {
+							width: {
+							  ratio: 0.5
+							}
+						  },
+						title: {text: "Number of readings per sensor type in " ,//+ month,
+											 padding: {
+												 top: 10,
+												 bottom: 10,
+											 },
+											 position: "top-center"
+										 },
+					  bindto: "#svgaux2",
+					});
+				console.log(c.data());
+				return c;
 	} 
 
 function vt(){
@@ -2213,7 +2331,7 @@ function force(name,domain) {
 			
 			var color = d3.scaleLinear()
 						.domain([min,max])      // usa questo per cambiare i colori alle linee
-						.range(["yellow","DarkRed"]);
+						.range(["lightgray","red"]);
 			console.log(links);
 			for(i=0;i<links.length;i++){
 				for(j=i;j<links.length;j++){
@@ -2341,17 +2459,13 @@ function force(name,domain) {
 function showInfo(name,data,filter){
 		var div1 = d3.select("#container").append("div").attr("id",name).attr("class","aux2");
 		div1.style("margin-left",0);
-		//div1.style("margin-right",0);
 		document.getElementById(name1).style.width="29%";
 		document.getElementById(name1).style.height="49%";
 		document.getElementById(name1).style.float="right";
-		
-		
-		
 		var h = document.getElementById(name).clientHeight;
 		var w = document.getElementById(name).offsetWidth;
-		    w = w - 20;
-			h = h; 
+		    w = w - margin.right;
+			h = h - margin.top; 
 		
 		var svg = d3.select("#"+name).append("svg")
 					.attr("id", "svg"+name)
@@ -2369,6 +2483,15 @@ function showInfo(name,data,filter){
 		for(i=0;i<general.length;i++){
 			arr.push([general[i].key,general[i].values.length]);
 		}
+		arr.sort(sortFunction);
+		function sortFunction(a, b) {
+			if (a[1] === b[1]) {
+				return 0;
+			}
+			else {
+				return (a[1] > b[1]) ? -1 : 1;
+			}
+		}
 		console.log(arr);
 			var c = bb.generate({
 					  data: {
@@ -2376,7 +2499,9 @@ function showInfo(name,data,filter){
 						[arr[4][0],0,0,0,0,arr[4][1],0,0],[arr[5][0],0,0,0,0,0,arr[5][1],0],[arr[6][0],0,0,0,0,0,0,arr[6][1]]],
 						type: "bar",
 						groups: [[arr[0][0],arr[1][0],arr[2][0],arr[3][0],arr[4][0],arr[5][0],arr[6][0]]], //fallo automaticamente seguyendo l'ordine di chi ha più traffico?
-					  },
+					  color:function(d) {return "steelblue";},			
+
+						},
 					  legend:{
 						show: false,  
 					  },
