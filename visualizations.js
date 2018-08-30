@@ -511,7 +511,6 @@ function scatter(name,filter,auxName){
 
 //add details for click on vehicle scatter
 function vehicleInfo(data){
-	console.log(data);
 	var left = d3.select("#container").append("div").attr("id","leftContainer").attr("class","mainClass");
 		document.getElementById("leftContainer").style.width="34.2%";
 		document.getElementById("leftContainer").style.float="left";
@@ -553,7 +552,7 @@ function vehicleInfo(data){
 				return (a[1] > b[1]) ? -1 : 1;
 			}
 		}
-		console.log(m);
+		//console.log(m);
 		var d = d3.select("#centerContainer").append("svg")
 				.attr("width", wc)
 				.attr("height", hc)
@@ -596,7 +595,7 @@ function vehicleInfo(data){
 					  bindto: "#svgcenter"
 					});
 
-		vehicleForce(data,left);
+		vehicleForce(data,"left");
 }	
 
 function vehicleForce(data,name){
@@ -609,64 +608,240 @@ function vehicleForce(data,name){
 				p.push(dat[i]["gate-name"]);
 				if(!gates.includes(dat[i]["gate-name"])){
 					gates.push(dat[i]["gate-name"]);
+					
 				}
 			}
 			paths.push(p);
 		}
-		console.log(paths,gates);
-		temp = [];
-		counter = new Array(gates.length).fill(0);
+		var order = [];
+		var matrix = [];
+		var map = {};
+		var map1 = {};
+		for(var i=0; i<gates.length; i++) {
+			matrix[i] = new Array(gates.length);
+			matrix[i].fill(0);
+			map[gates[i]] = i;
+			if(map1[gates[i]] == null){
+				map1[gates[i]] = 0;
+			} 
+			order.push(gates[i]); 
+
+		}
+		console.log(gates,matrix);
+		console.log(map1);
+		console.log("p",paths);
 		for(i=0;i<paths.length;i++){
-			for(j=0;j<paths[i].length;j++){
-				curr = paths[j] //non ho voglia trova qualcosa da mettere e fanculo
+			for(j=0;j<paths[i].length-1;j++){
+					curr = paths[i][j]
+					next = paths[i][j+1]
+					console.log(map1[curr]);
+					map1[curr] = map1[curr]+1;
+										console.log(map1[curr]);
+					map1[next] = map1[next]+1;
+					matrix[map[curr]][map[next]] = matrix [map[curr]][map[next]]+1;
 			}
-		}
-		/*
-		temp = [];
-		for(i=0;i<paths.length;i++){
-			for(j=0;j<paths[i].length - 1;j++){
-				 temp.push([paths[i][j],paths[i][j+1]]);				
+		}	
+		var nodesGeneral = [];
+		for (i=0;i<gates.length;i++){
+				n = gates[i]; 
+				obj = {"label": n,"value": map1[n] }
+				nodesGeneral.push(obj);
 			}
-		}
-		
-		
-		matrix = new Array(temp.length).fill(0);
-		
-		for(i=0;i<temp.length;i++){
-			for(j=0;j<temp.length;j++){
-				if(temp[j].includes(temp[i][0]) && temp[j].includes(temp[i][1])){
-					matrix[i] = matrix[i]+1;
-					
-				}
-			}
-		}
-		console.log(matrix);
-		
-		
-	/*	
-		for(i=0;i<temp.length;i++){
-			for(j=0;j<temp.length;j++){
-				if((temp[i][0] == temp[j][0] && temp[i][1] == temp[j][1]) || (temp[i][0] == temp[j][1] && temp[i][1] == temp[j][0])){
-					matrix[i] = matrix[i]+ 1;
-					//temp.splice(j,1);
-				}
-			}
-		} 
 		links = [];
-		for(i=0;i<temp.length;i++){
-			obj = {"source": temp[i][0],"target":temp[i][1],"value":matrix[i]};
-			links.push(obj);
-		}
+		max = 0;
+		min = 0;
+		for(i=0;i<matrix.length;i++){
+			for(j=0;j<matrix[i].length;j++){
+					if(matrix[i][j] != 0 && order[i] != order[j]){ //togli le reads una uguale all'altra, farebbero i loop sul nodo
+					el = {"source":order[i], "target":order[j], "value": matrix[i][j],"strength":0.7}
+					links.push(el);
+					if(el.value > max){
+						max = el.value;
+					} else if (min == 0){
+						min = el.value;
+					} else if(el.value < min){
+						min = el.value;
+					}
+				}
+			}
+		}	
 		for(i=0;i<links.length;i++){
 			for(j=i;j<links.length;j++){
-				if((links[i].source == links[j].source && links[i].target == links[j].target) || (links[i].target == links[j].source && links[i].source == links[j].target)){
-				links[i].value = links[i].value + links[j].value;
-				links.splice(j,1);
+				if((links[i].source == links[j].target) && (links[i].target == links[j].source)){
+					links[i].value = links[i].value + links[j].value;
+					links.splice(j,1);
 				}
 			}
 		}
 		console.log(links);
-		*/
+		var h = document.getElementById("leftContainer").clientHeight;
+		var w = document.getElementById("leftContainer").offsetWidth;
+		    w = w;
+			h = h; 
+		var svg = d3.select("#leftContainer").append("svg")
+					.attr("id", "svg"+name)
+					.attr("width", w)
+					.attr("height", h)
+					.append("g")
+					.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+						
+		var legendRect = 10;
+		var legendSpacing = 4;
+			
+		legend = svg.selectAll('.legend')                     // NEW
+			.data(["Ranger Camps","General gates","Entrances","Camping sites","Gates"])                                   // NEW
+			  .enter()                                                // NEW
+			  .append('g')                                            // NEW
+			  .attr('class', 'legend')                    
+			  .attr("transform", function(d,i){
+				  var width = legendRect + legendSpacing;
+				  var offset =  70;
+				  var vert = i * (legendRect + offset -50) ;
+				  var horz = -2 * legendRect - 70;
+				  return "translate("+ ((w/2) - horz)+","+ (h - (h/2) - vert) +")";
+			  });
+			  
+		legend.append("rect")
+				.attr("width",10)
+				.attr("height",10)
+				.style("fill",function(d,i){if (d=="Ranger Camps") {return "#a6cee3";}
+									else if (d == "General gates") {return "#1f78b4";}
+									else if (d == "Camping sites") {return "#33a02c";}
+									else if (d == "Gates") 		   {return "#fb9a99";}
+									else if (d == "Entrances")     {return "#b2df8a";}
+									})
+				
+		legend.append("text")
+				.attr("x", 20)
+				.attr("y", 10)
+				.attr("font-size","10px")
+				.text(function(d) {return d})
+			var simulation = d3.forceSimulation().nodes(nodesGeneral);
+			simulation.force("charge_force", d3.forceManyBody())
+						.force("center_force", d3.forceCenter(w / 4, h / 3));
+			
+			var color = d3.scaleLinear()
+						.domain([min,max])      // usa questo per cambiare i colori alle linee
+						.range(["lightgray","red"]);
+			//console.log(links);
+			for(i=0;i<links.length;i++){
+				for(j=i;j<links.length;j++){
+					if((links[i].source == links[j].target) && (links[i].target == links[j].source)){
+						links[i].value = links[i].value + links[j].value;
+						links.splice(j,1);
+					}
+				}
+			}
+		var svgLinks = svg.append("g")
+							.attr("class", "links")
+							.selectAll("line")
+							.data(links)
+							.enter()
+							.append("line")
+							.style("stroke",function(d){return color(d.value)})
+							.attr("stroke-width", 2)
+							.style("z-index",-1)
+							.on("mouseover", function(d) {		
+									tool.transition()		
+										.duration(200)		
+										.style("opacity", .9)
+										.style("left", (d3.event.pageX) + "px")		
+										.style("top", (d3.event.pageY - 28) + "px")	
+									tool.append("div").attr("id","t1").append("text").text("readings: " + d.value);
+							;})			
+							.on("mouseout", function(d) {		
+									tool.transition()		
+										.duration(500)		
+										.style("opacity", 0);
+									d3.selectAll("#t1").remove();
+							})
+
+			
+		radius = 8;
+		console.log(gates);
+		var node = svg.append("g")
+						//	.attr("class", "nodes")
+							.selectAll("circle")
+							.data(nodesGeneral)
+							.enter()
+							.append("circle")
+							.attr("r", radius)
+							.attr("fill", function(d){if ((d.label).indexOf("ranger") > -1) {
+												return "#a6cee3";   //ranger azzurro 
+											} else if ((d.label).indexOf("general-gate") > -1) {
+												return "#1f78b4"; // general gate blu
+											} else if ((d.label).indexOf("entrance") > -1){
+												return "#b2df8a";  //verdino entrance
+											} else if ((d.label).indexOf("camping") > -1){
+												return "#33a02c"; //verde camping
+											} else { 
+												return "#fb9a99"; //rosa gates 
+											}})
+							.on("mouseover", function(d) {		
+									tool.transition()		
+										.duration(200)		
+										.style("opacity", .9)
+										.style("left", (d3.event.pageX) + "px")		
+										.style("top", (d3.event.pageY - 28) + "px")	
+									tool.append("div").attr("id","t1").append("text").text(d.label);
+									tool.append("div").attr("id","t1").append("text").text("readings: " + d.value);
+							;})			
+							.on("mouseout", function(d) {		
+									tool.transition()		
+										.duration(500)		
+										.style("opacity", 0);
+									d3.selectAll("#t1").remove();
+							})
+							.on("click",function(d){});
+
+			
+		simulation.on("tick", tickActions );
+		
+		var link_force =  d3.forceLink(links)
+                        .id(function(d) {return d.label; })
+						
+		simulation.force("links",link_force)
+		
+		function tickActions() {
+				//update circle positions to reflect node updates on each tick of the simulation 
+				node.attr("cx", function(d) { return d.x = Math.max(radius, Math.min(w - radius, d.x)); })
+					.attr("cy", function(d) { return d.y = Math.max(radius, Math.min(h -radius, d.y)); });
+
+					
+				 svgLinks.attr("x1", function(d){return d.source.x; })
+						.attr("y1", function(d) { return d.source.y; })
+						.attr("x2", function(d) { return d.target.x; })
+						.attr("y2", function(d) { return d.target.y; });
+
+		}
+			  
+		var drag_handler = d3.drag()
+				.on("start", drag_start)
+				.on("drag", drag_drag)
+				.on("end", drag_end);
+				
+		function drag_start(d) {
+				  if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+				  d.fx = d.x;
+				  d.fy = d.y;
+				}
+				 
+		function drag_drag(d) {
+				  d.fx = d3.event.x;
+				  d.fy = d3.event.y;
+				}
+				 
+		function drag_end(d) {
+			  if (!d3.event.active) simulation.alphaTarget(0);
+			  d.fx = d.x;
+			  d.fy = d.y;
+			}
+
+		drag_handler(node);
+
+		var tool = d3.select("body").append("div")	
+						.attr("class", "tooltip")				
+						.style("opacity", 0);
 }
 
 
@@ -743,6 +918,7 @@ var d = d3.select("#"+name).append("svg")
 				.style("opacity","1")
 				.attr("fill",function(c,i) {if(clicked[val+"t"] == 1){
 																	return chart.color(val)} else {return "lightgray"}})
+				.moveToFront();
 	  },
 		onover: function(d, i) {
 						div.append("div").attr("y",h-40).style("text-align","center").attr("id","temp").text((Math.round (d.ratio*1000))/10 + "%");
@@ -1023,7 +1199,7 @@ function auxBar(data,name,filter){
 				obj = {"key":data[j].key,"percent":data[j].values.length};
 				arr.push(obj);
 			}
-			console.log(data);
+			//console.log(data);
 			//pieroni(arr,"aux1","% of traffic per \n vehicle type");
 			radar = radaroni(data,"aux1");
 			var div = d3.select("#container").append("div").attr("id",name).attr("class","mainClass");
@@ -1185,7 +1361,7 @@ function radaroni(data,name){
 		}
 		arr.push([el,ranger,general,entrance,camping,gate])
 	}
-	console.log(arr);
+	//console.log(arr);
 	
 	var div = d3.select("#container").append("div").attr("id",name).attr("class",name).style("font-size","12px");
 				document.getElementById(name).style.float="right";
@@ -1363,7 +1539,6 @@ function gateBar(key,filter){
 					.transition()
 					.duration(250)
 					.attr("height", function(d, i) {
-						console.log(y(d.values.length));
 						return h - y(d.values.length);
 					})
 			//modifica pie chart esistente
@@ -1536,7 +1711,7 @@ function multiLine(data,name,filter) {
 									entrance = 0;
 									gate = 0;
 									camping = 0;
-									console.log(filtered);
+									//console.log(filtered);
 									for(i=0;i<filtered.length;i++){
 										map={"1":0,"2":0,"3":0,"4":0,"5":0,"6":0,"2P":0}
 										for(j=0;j<filtered[i].values.length;j++){
@@ -1567,7 +1742,7 @@ function multiLine(data,name,filter) {
 										}
 									}
 									week = gateWeek(temp,arr,m[d.index],"aux2");
-									console.log(temp);
+									//console.log(temp);
 									setTimeout(function() {g.unload();	d3.select("#Month").text("Readings per day of the week (" + m[d.index] + ")");},1000);	
 									setTimeout(function() {g.load({columns:matrix});clicked = false;},1500)
 										})								
@@ -1633,7 +1808,7 @@ function multiLine(data,name,filter) {
 		map = {"Mon": 1, "Tue":2, "Wed":3, "Thu":4,"Fri":5, "Sat":6, "Sun":7}
 		days = [0,0,0,0,0,0,0];
 		matrix = [];
-		console.log(arr[map[ordered[0].values[0].key]]);
+		//console.log(arr[map[ordered[0].values[0].key]]);
 		for(i=0;i<ordered.length;i++){
 			arr = [ordered[i].key,0,0,0,0,0,0,0];
 			for(j=0;j<ordered[i].values.length;j++){
@@ -1713,7 +1888,7 @@ function weekDays(data,raw,name,filter) {
 			.attr("transform", "translate(" + w / 2 + "," + h/2 + ")");
   //capisci bene come è da organizzare i dati per rappresnetare nella chart i giorni della settimana con sopra "stacked type of vehicle"
 	  //se uno clicca da una parte o dall'altra, viene tutto nascosto in entrambi i grafici.
-	console.log(data);
+	//console.log(data);
 
 	var chart = bb.generate({
   data: {
@@ -1810,15 +1985,15 @@ function gateWeek(data,arr,month,name){
 										 },
 					  bindto: "#svg"+name
 					});
-				console.log(c.data());
+				//console.log(c.data());
 				return c;
 }
 	
 
 //aggiorna il grafico di gate week togliendo i tipi di macchine deselezionati nelle altre legend
 function removeType(type,graph,data,month){
-	console.log(data);
-	console.log(graph.data());
+	//console.log(data);
+	//console.log(graph.data());
 	var rangers = 0,
 		general = 0,
 		entrances = 0,
@@ -1838,7 +2013,7 @@ function removeType(type,graph,data,month){
 					gates = gates + data[i][1][type];
 				}
 	}
-		console.log("remove",rangers,gates,entrances,campings,general);
+	//console.log("remove",rangers,gates,entrances,campings,general);
 	d = graph.data();
 	r = 0;
 	ge= 0;
@@ -1862,7 +2037,7 @@ function removeType(type,graph,data,month){
 		}		
 	}
 	//console.log("d",d);
-	console.log("valori da caricare dopo aver tolto",r,ga,e,c,ge); //occhio che forse lo chiama quando non deve
+	//console.log("valori da caricare dopo aver tolto",r,ga,e,c,ge); //occhio che forse lo chiama quando non deve
 	//arr = [["ranger-stops",r,0,0,0,0],["general-gates",0,ge,0,0,0],["entrances",0,0,e,0,0],["gates",0,0,0,ga,0],["campings",0,0,0,0,c]]
 	arr = [["ranger-stops",r],["general-gates",ge],["entrances",e],["gates",ga],["campings",c]]
 	arr.sort(sortFunction);
@@ -1921,7 +2096,7 @@ function removeType(type,graph,data,month){
 										 },
 					  bindto: "#svgaux2",
 					});
-				console.log(c.data());
+				//console.log(c.data());
 				return c;
 }
 
@@ -1944,7 +2119,7 @@ function addType(type,graph,data){
 					gates = gates + data[i][1][type];
 				}
 	}
-	console.log("add",rangers,gates,entrances,campings,general);
+	//console.log("add",rangers,gates,entrances,campings,general);
 	d = graph.data();
 	r = 0;
 	ge= 0;
@@ -2023,7 +2198,7 @@ function addType(type,graph,data){
 										 },
 					  bindto: "#svgaux2",
 					});
-				console.log(c.data());
+				//console.log(c.data());
 				return c;
 	} 
 
@@ -2232,7 +2407,7 @@ function force(name,domain) {
 				}
 				paths.push(p1);
 			}
-			
+			console.log(nodesGeneral);
 			var map = {};
 			var order = [];
 			var matrix = [];
@@ -2304,7 +2479,7 @@ function force(name,domain) {
 			  .attr('class', 'legend')                    
 			  .attr("transform", function(d,i){
 				  var width = legendRect + legendSpacing;
-				  var offset =  h * 2 / 3 - 100;
+				  var offset =  70;
 				  var vert = i * (legendRect + offset -50) ;
 				  var horz = -2 * legendRect - 70;
 				  return "translate("+ (w - (w/4) - horz)+","+ (h - (h/2) - vert) +")";
@@ -2492,7 +2667,7 @@ function showInfo(name,data,filter){
 				return (a[1] > b[1]) ? -1 : 1;
 			}
 		}
-		console.log(arr);
+		//console.log(arr);
 			var c = bb.generate({
 					  data: {
 						columns: [[arr[0][0],arr[0][1],0,0,0,0,0,0],[arr[1][0],0,arr[1][1],0,0,0,0,0],[arr[2][0],0,0,arr[2][1],0,0,0,0],[arr[3][0],0,0,0,arr[3][1],0,0,0],
