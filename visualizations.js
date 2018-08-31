@@ -1863,7 +1863,7 @@ function filterData(data,month){
 function weekDays(data,raw,name,filter) {
 	var div = d3.select("#container").append("div").attr("id",name).attr("class","aux1");
 			document.getElementById(name).style.width="42%";
-			document.getElementById(name).style.height="58%";
+			document.getElementById(name).style.height="59%";
 			document.getElementById(name).style.float="right";
 	var h = document.getElementById(name).clientHeight;
 	var w = document.getElementById(name).offsetWidth;
@@ -2215,19 +2215,42 @@ function vtime(){
 	if(!!main){
 		main.remove();
 	}
-	timeroni("main");
+	timeroni("main","General");
 }
 
-function timeroni(name){
+function timeroni(name,filter){
 	d3.csv("Lekagul Sensor Data.csv").then(function(data){
 			base = data;
-			var ordered = d3.nest()
+			type = "";
+			if(filter == "General") {
+				type = " "
+			} else if(filter == "Type 1") {
+				type = "1";
+			} else if(filter == "Type 2"){
+				type = "2";
+			} else if(filter == "Type 3") {
+				type = "3";
+			} else if(filter == "Type 4"){
+				type = "4";
+			} else if(filter == "Type 5") {
+				type = "5";
+			} else if(filter == "Type 6"){
+				type = "6";
+			} else if(filter == "Type 2P") {
+				type = "2P";
+			}
+			var ordered = [];
+			if (type == " "){
+				ordered = d3.nest()
 					.key(function(d){return d['Timestamp'];})
-					.entries(data);			
-			var date = "2015-05-01 08:32:09"
+					.entries(data);
+			} else {
+				ordered = d3.nest()
+							.key(function(d){return d["Timestamp"];})
+							.entries(data)
+							.filter(function(d) {if(d.values[0]["car-type"] == type) {return d }});
+			}
 			var parseTime = d3.timeParse("%Y-%m-%d %H:%M:%S");
-			var c = parseTime(date);
-			
 			var format = d3.timeFormat("%y-%m-%d");
 	
 			ordered.forEach(function(d,i) {   
@@ -2261,8 +2284,39 @@ function timeroni(name){
 			var offsets = document.getElementById(name).getBoundingClientRect();
 			var top = offsets.top;
 			var left = offsets.left;
-
-			
+				
+						function onchange() {
+							s = document.getElementById("sel")
+							selectValue= ""+s[s.selectedIndex].value;
+							filter = selectValue;
+							document.getElementById(name).remove();
+							e = document.getElementById("aux2")
+							f = document.getElementById("a")
+							if(!!f){
+								f.remove();
+							}
+							if(!!e){
+								e.remove();
+							}
+							if(selectValue == "General") {
+										timeroni(name,"General");
+									} else if(selectValue == "Type 1") {
+										timeroni(name,"Type 1");
+									} else if(selectValue == "Type 2"){
+										timeroni(name,"Type 2");
+									} else if(selectValue == "Type 3") {
+										timeroni(name,"Type 3");
+									} else if(selectValue == "Type 4"){
+										timeroni(name,"Type 4");
+									} else if(selectValue == "Type 5") {
+										timeroni(name,"Type 5");
+									} else if(selectValue == "Type 6"){
+										timeroni(name,"Type 6");
+									} else if(selectValue == "Type 2P") {
+										timeroni(name,"Type 2P");
+									}
+						}
+			filters = ["General","Type 1","Type 2","Type 3","Type 4","Type 5","Type 6", "Type 2P"]
 			d3.select("#"+name).append("div")
 								.style("margin-top","20px")
 								.style("margin-left","20px")
@@ -2270,10 +2324,28 @@ function timeroni(name){
 								.style("left",left)
 								.style("top",top)
 								.style("text-align","center")
-								.style("z-index",3)
+								.style("z-index",2)
 								.attr("id","temp")
 								.style("font-size","10px")
 								.text("Selected time interval: ")
+			
+			
+			var s = d3.select('#'+name)
+						  .append('select')
+							.attr("id","sel")
+							.attr('class','select')
+							.style("position","absolute")
+							.style("left",left)
+							.style("top",top)
+							.style("z-index",3)
+							.on('change',onchange)
+
+			var options = s.selectAll('option')
+							.data(filters)
+							.enter()
+							.append('option')
+							.text(function (d) { return d})
+							.property("selected", function(d){return d == filter});
 			
 			d3.select("#"+name).append("div")
 								.append("input")
@@ -2299,7 +2371,6 @@ function timeroni(name){
 					.attr("height", h)
 					.append("g")
 					.attr("transform", "translate(" + margin.left  + "," + margin.top + ")");
-	//		console.log("months",months); mesi singoli in array 
 			var chart = bb.generate({
 				  data: {
 					x: "x",
@@ -2309,7 +2380,7 @@ function timeroni(name){
 					x: {
 					  type: "timeseries",
 					  tick: {
-							fit: true,  //guarda bene fa cacar
+							fit: true,  
 							count: 12,
 							format: "%d-%m-%y",
 						}
@@ -2332,7 +2403,7 @@ function timeroni(name){
 																												if(!!document.getElementById("aux2")){
 																													document.getElementById("aux2").remove();
 																												}
-																												force("a",domain)});
+																												force("a",domain,type)});
 												d3.select("#temp").text("Selected time interval: "+ toShow(beginning) +" , "+toShow(end))
 												},
 					size: {height: 10,},
@@ -2347,7 +2418,7 @@ function timeroni(name){
 						}
 					  }
 				},  
-				   title: {text: "Traffic readings",
+				   title: {text: function(){if (filter == "General") {return  "Traffic readings"} else {return "Traffic readings (" + filter + ")"}},
 						 padding: {
 							 top: 10,
 							 bottom: 10,
@@ -2362,7 +2433,7 @@ function timeroni(name){
 	});
 }
 
-function force(name,domain) {   
+function force(name,domain,filter) {   
 	var margin = {top: 40, right: 20, bottom: 50, left: 10};
 
 	d3.csv("Lekagul Sensor Data.csv").then(function(data){
@@ -2451,8 +2522,9 @@ function force(name,domain) {
 			console.log("nodesgen",nodesGeneral);
 	*/					
 			//div utilizzata da questo 
-			var div = d3.select("#container").append("div").attr("id",name).attr("class","aux2");
-			document.getElementById(name).style.width="70%";
+			var div = d3.select("#container").append("div").attr("id",name).attr("class","aux2").style("margin-right",0);
+			document.getElementById(name).style.width="66%";
+			document.getElementById(name).style.width="66%";
 			document.getElementById(name).style.height="49%";
 			document.getElementById(name).style.float="left";
 			//div utilizzata dall'altra funzione per visualizzare i dettagli
@@ -2482,7 +2554,7 @@ function force(name,domain) {
 				  var offset =  70;
 				  var vert = i * (legendRect + offset -50) ;
 				  var horz = -2 * legendRect - 70;
-				  return "translate("+ (w - (w/4) - horz)+","+ (h - (h/2) - vert) +")";
+				  return "translate("+ (w - (w/3.5) - horz)+","+ (h - (h/2) - vert) +")";
 			  });
 			  
 			 legend.append("rect")
@@ -2626,15 +2698,121 @@ function force(name,domain) {
 			var tool = d3.select("body").append("div")	
 						.attr("class", "tooltip")				
 						.style("opacity", 0);
-			
-			showInfo(name1,base,"Vehicle Types");
+			if(filter == " "){
+				showInfo(name1,base,"Vehicle Types");
+			} else {
+				timeSensor(name1,filter,domain);
+			}
 })
 }
+
+function timeSensor(name,filter,domain){
+		d3.csv("Lekagul Sensor Data.csv").then(function(data){
+			var parseTime = d3.timeParse("%Y-%m-%d %H:%M:%S");
+			var format = d3.timeFormat("%y-%m-%d");
+			data.forEach(function(d,i) {   
+				var time = parseTime(d.Timestamp);
+				d.Timestamp = format(time);
+				})
+			data = data.filter(function(d){if(d.Timestamp >= domain[0] && d.Timestamp <= domain[1]){return d}});
+			ordered = d3.nest()
+					.key(function(d){return d["car-type"]})
+					.key(function(d){return d["gate-name"]})
+					.entries(data)
+					.filter(function(d){if (d.key == filter){return d}})
+			console.log(ordered,domain);
+			ranger = 0;
+			entrance = 0;
+			camping = 0;
+			gate = 0;
+			general = 0;
+			for(i=0;i<ordered[0].values.length;i++){
+				d = ordered[0].values[i];
+				console.log(d);
+				if ((d.key).indexOf("ranger") > -1) {
+					ranger = ranger + d.values.length; 
+				} else if ((d.key).indexOf("general-gate") > -1) {
+					general = general + d.values.length;
+				} else if ((d.key).indexOf("entrance") > -1){
+					entrance = entrance + d.values.length;
+				} else if ((d.key).indexOf("camping") > -1){
+					camping = camping + d.values.length;
+				} else { 
+					gate =gate + d.values.length;
+				}
+			}
+			arr = [["ranger-stops",ranger],["general-gates",general],["entrances",entrance],["campings",camping],["gates",gate]]
+			arr.sort(sortFunction);
+			function sortFunction(a, b) {
+				if (a[1] === b[1]) {
+					return 0;
+				}
+				else {
+					return (a[1] > b[1]) ? -1 : 1;
+				}
+			}
+			console.log(arr);
+			var div = d3.select("#container").append("div").attr("id",name).attr("class",name).style("font-size","12px");
+						document.getElementById(name).style.float="right";
+						document.getElementById(name).style.width="33%";
+						document.getElementById(name).style.height="49%";
+			var h = document.getElementById(name).clientHeight;
+			var w = document.getElementById(name).offsetWidth;
+				w = w -20;
+				h = h -20;		
+			var svg = d3.select("#"+name).append("svg")
+						.attr("width", w)
+						.attr("height", h)
+						.attr("id","svg"+name)
+						.style("float","left")
+						.append("g")
+						.attr("transform", "translate(" + w / 2 + "," + h/2 + ")");
+		var chart = bb.generate({
+						  data: {
+							color: function(color,d){if(name=="aux2")
+														{if(d == "ranger-stops"){
+																		return "#a6cee3";
+																		 } else if(d == "general-gates") {
+																			return "#1f78b4";
+																		 } else if(d == "entrances"){
+																			return "#b2df8a";
+																		 } else if(d == "campings"){
+																			return "#33a02c";
+																		 } else {
+																			return "#fb9a99";
+														}}
+													 else {
+														return color;
+														}
+													},
+							columns: arr,
+							type: "donut",
+							onover: function(d, i) {
+										div.append("div").attr("x",w/2).style("text-align","center").attr("id","temp").text((Math.round (d.ratio*1000))/10 + "%");
+						   },
+							onout: function(d, i) {
+										d3.selectAll("#temp").remove();
+						   },
+							onclick: function(d){},
+						  },
+							legend:{
+								show: true,
+								position:'right',
+								item: {onclick: function(d){},},
+							},
+							donut: {
+							title: "Readings per sensor \n type for vehicle "+filter,
+						  },
+						  bindto: "#svg"+name
+						});
+		})
+}
+
 
 function showInfo(name,data,filter){
 		var div1 = d3.select("#container").append("div").attr("id",name).attr("class","aux2");
 		div1.style("margin-left",0);
-		document.getElementById(name1).style.width="29%";
+		document.getElementById(name1).style.width="33%";
 		document.getElementById(name1).style.height="49%";
 		document.getElementById(name1).style.float="right";
 		var h = document.getElementById(name).clientHeight;
