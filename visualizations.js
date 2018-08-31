@@ -685,25 +685,28 @@ function vehicleForce(data,name){
 					.append("g")
 					.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 						
-		var legendRect = 10;
-		var legendSpacing = 4;
+		var legendRect = 5;
+		var legendSpacing = 2;
 			
 		legend = svg.selectAll('.legend')                     // NEW
 			.data(["Ranger Camps","General gates","Entrances","Camping sites","Gates"])                                   // NEW
 			  .enter()                                                // NEW
-			  .append('g')                                            // NEW
+			  .append('g')
+			  .style("font-size","6px")
 			  .attr('class', 'legend')                    
 			  .attr("transform", function(d,i){
-				  var width = legendRect + legendSpacing;
-				  var offset =  70;
-				  var vert = i * (legendRect + offset -50) ;
-				  var horz = -2 * legendRect - 70;
-				  return "translate("+ ((w/2) - horz)+","+ (h - (h/2) - vert) +")";
+				  var width = legendRect;
+				  var offset =  100;
+				  var vert = legendRect - 70
+				  var horz = i * (legendRect + offset -30);
+				//  var vert = i * (legendRect + offset -50) ;
+				//  var horz = -2 * legendRect - 70;
+				  return "translate("+ (horz-30)+","+ (h - 70) +")";
 			  });
 			  
 		legend.append("rect")
-				.attr("width",10)
-				.attr("height",10)
+				.attr("width",8)
+				.attr("height",8)
 				.style("fill",function(d,i){if (d=="Ranger Camps") {return "#a6cee3";}
 									else if (d == "General gates") {return "#1f78b4";}
 									else if (d == "Camping sites") {return "#33a02c";}
@@ -712,9 +715,9 @@ function vehicleForce(data,name){
 									})
 				
 		legend.append("text")
-				.attr("x", 20)
-				.attr("y", 10)
-				.attr("font-size","10px")
+				.attr("x", 10)
+				.attr("y", 8)
+				.attr("font-size","8px")
 				.text(function(d) {return d})
 			var simulation = d3.forceSimulation().nodes(nodesGeneral);
 			simulation.force("charge_force", d3.forceManyBody())
@@ -757,7 +760,7 @@ function vehicleForce(data,name){
 							})
 
 			
-		radius = 8;
+		radius = 6;
 		console.log(gates);
 		var node = svg.append("g")
 						//	.attr("class", "nodes")
@@ -804,8 +807,8 @@ function vehicleForce(data,name){
 		
 		function tickActions() {
 				//update circle positions to reflect node updates on each tick of the simulation 
-				node.attr("cx", function(d) { return d.x = Math.max(radius, Math.min(w - radius, d.x)); })
-					.attr("cy", function(d) { return d.y = Math.max(radius, Math.min(h -radius, d.y)); });
+				node.attr("cx", function(d) { return d.x = Math.max(radius, Math.min(w/1.2 - radius, d.x)); })
+					.attr("cy", function(d) { return d.y = Math.max(radius, Math.min(h/1.5 -radius, d.y)); });
 
 					
 				 svgLinks.attr("x1", function(d){return d.source.x; })
@@ -2447,6 +2450,9 @@ function force(name,domain,filter) {
 //			console.log(base);
 			base = base.filter(function(d){return (d["Timestamp"] >= domain[0])})
 			base = base.filter(function(d){return (d["Timestamp"] <= domain[1])})
+			if(filter != " "){
+				base = base.filter(function(d){return (d["car-type"] == filter)});
+			}
 			var general = d3.nest()
 					.key(function(d){return d['gate-name'];})
 					.key(function(d){return d['car-id'];})
@@ -2533,14 +2539,17 @@ function force(name,domain,filter) {
 			var w = document.getElementById(name).offsetWidth;
 			    w = w;
 				h = h; 
-
+			if (filter == " "){
+				d3.select("#"+name).append("div").style("margin-top","4px").style("font-size","14px").style("text-align","center").text("Traffic map for selected time period");
+			} else {
+				d3.select("#"+name).append("div").style("margin-top","4px").style("font-size","14px").style("text-align","center").text("Traffic map for selected time period (vehicle type" + filter + ")");
+			}
 			var svg = d3.select("#"+name).append("svg")
 						.attr("id", "svg"+name)
 						.attr("width", w)
 						.attr("height", h)
 						.append("g")
 						.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-						
 			var legendRect = 10;
 			var legendSpacing = 4;
 			
@@ -2660,8 +2669,8 @@ function force(name,domain,filter) {
 		
 		function tickActions() {
 				//update circle positions to reflect node updates on each tick of the simulation 
-				node.attr("cx", function(d) { return d.x = Math.max(radius, Math.min(w - radius, d.x)); })
-					.attr("cy", function(d) { return d.y = Math.max(radius, Math.min(h -radius, d.y)); });
+				node.attr("cx", function(d) { return d.x = Math.max(radius, Math.min(w/1.3 - radius, d.x)); })
+					.attr("cy", function(d) { return d.y = Math.max(radius, Math.min(h/1.5 -radius, d.y)); });
 
 					
 				 svgLinks.attr("x1", function(d){return d.source.x; })
@@ -2737,8 +2746,8 @@ function timeSensor(name,filter,domain){
 					entrance = entrance + d.values.length;
 				} else if ((d.key).indexOf("camping") > -1){
 					camping = camping + d.values.length;
-				} else { 
-					gate =gate + d.values.length;
+				} else if((d.key).indexOf("gate") > -1 && d.key.length <6) { 
+					gate = gate + d.values.length;
 				}
 			}
 			arr = [["ranger-stops",ranger],["general-gates",general],["entrances",entrance],["campings",camping],["gates",gate]]
