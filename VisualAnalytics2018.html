@@ -36,7 +36,7 @@
 	scala blu
 	#002942
 	#005C91
-	#0091E5  migliore ma "scontata"? giusticfica il blu con gli studi delle cose ecc ecc
+	#0091E5  
 	#38B6FF
 	#7CCFFF
 	*/ 
@@ -49,7 +49,7 @@
 	.title{
 		width: 100%;
 		height: 60px;
-		background-color: #005C91;
+		background-color: #005C91;//#005C91;
 		color:white;
 		margin-bottom:0;
 		z-index: 1;
@@ -62,14 +62,14 @@
 	*/	left:0;
 		margin:0;
 		float:left;
-		background-color:#38B6FF;
+		background-color: #38B6FF;//#38B6FF;
 		font-family: Tahoma, Geneva, sans-serif;
 	}
 	
 	.filterMenu .filterButton {
 		height: 40px;
 		width:100%;
-		background-color: 	#38B6FF;
+		background-color:#38B6FF; 	//#38B6FF;
        /* #92B558; */
 		color: white;
 		text-align: center;
@@ -152,7 +152,7 @@
 	
 	.tooltip {	
     position: absolute;			
-    text-align: center;			
+    text-align: left;			
    // width: 60px;					
    // height: 28px;					
     padding: 2px;				
@@ -162,9 +162,14 @@
     border-radius: 8px;			
     pointer-events: none;			
 }
+//#27632a
+//#388e3c
+//#5fa463
+
+ //#0091E5 blu filter
+
 
 	</style> 
- 
  </head>
 <body style="margin:0" onresize="resize()">
 
@@ -172,7 +177,7 @@
 		<text> Visual Analytics 2018 </text> 
 	</div> 
 
-	<div class="filterMenu">
+	<div class="filterMenu"> 
 	  <div style="color: white;font-size:20px;background-color:#0091E5;padding:10px;text-align:center"> <text style="margin-left:3%"> Filters </text> </div> 
 	  <input class="filterButton" type="button" value="Vehicle/Sensor Type" onClick="init(this.value)"> </input>
 	  <input class="filterButton" type="button" value="Time" onClick="init(this.value)"> </input> 

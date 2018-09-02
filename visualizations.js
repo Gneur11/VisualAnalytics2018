@@ -1,8 +1,6 @@
 var margin = {top: 40, right: 20, bottom: 50, left: 60};
 var gInput = "";
 
-//metti nella view in basso a destra dopo aver cliccato: ID, numero di reading e sensori dov'è stato letto.
-//metti anche una nuova view sotto in caso
 function resize (e) {
 		init(gInput);
 	};
@@ -211,7 +209,7 @@ function scatter(name,filter,auxName){
 				}
 				var obj = {'sum':sum,"car":car,"days":days,"id":id,"raw":raw};
 				special.push(obj);
-			}					// magari qua aggiungi qualche dettaglio per lo special access 
+			}					
 			
 			var ordered;
 			if(filter == "General"){
@@ -246,7 +244,7 @@ function scatter(name,filter,auxName){
 					.style("display","block")
 					.attr("class","filterButton")
 					.attr("id","showButton")
-					.style("background-color","#38B6FF")
+					.style("background-color","#38B6FF") //#38B6FF
 					.style("border","none")
 					.style("margin-top","10px")
 					.style("margin-left","10px")
@@ -309,7 +307,6 @@ function scatter(name,filter,auxName){
 				  .attr("transform", "translate(0," + h + ")")
 				  .attr("class","x") 
 				  .call(d3.axisBottom(x));
-			  // text label for the x axis
 			svg.append("text")             
 				  .attr("transform",
 						"translate(" + (w/2) + " ," + 
@@ -511,10 +508,10 @@ function scatter(name,filter,auxName){
 
 //add details for click on vehicle scatter
 function vehicleInfo(data){
-	var left = d3.select("#container").append("div").attr("id","leftContainer").attr("class","mainClass");
+	var left = d3.select("#container").append("div").attr("id","leftContainer").attr("class","mainClass").style("margin-right", "5px");
 		document.getElementById("leftContainer").style.width="34.2%";
 		document.getElementById("leftContainer").style.float="left";
-		document.getElementById("leftContainer").style.height="43%";
+		document.getElementById("leftContainer").style.height="44%";
 	var hl = document.getElementById("leftContainer").clientHeight;
 	var wl = document.getElementById("leftContainer").offsetWidth;
 	//    wl = wl + 20 - margin.right - margin.left;
@@ -522,7 +519,7 @@ function vehicleInfo(data){
 	var center = d3.select("#container").append("div").attr("id","centerContainer").attr("class","mainClass");
 		document.getElementById("centerContainer").style.width="34.5%";
 		document.getElementById("centerContainer").style.float="left";
-		document.getElementById("centerContainer").style.height="43%";	
+		document.getElementById("centerContainer").style.height="44%";	
 		m = [["ranger-stops",0],["entrances",0],["campings",0],["gate",0],["general-gates",0]]
 	var hc = document.getElementById("centerContainer").clientHeight;
 	var wc = document.getElementById("centerContainer").offsetWidth - 10;
@@ -564,8 +561,8 @@ function vehicleInfo(data){
 					  data: {
 						columns: [[m[0][0],m[0][1],0,0,0,0],[m[1][0],0,m[1][1],0,0,0],[m[2][0],0,0,m[2][1],0,0],[m[3][0],0,0,0,m[3][1],0],[m[4][0],0,0,0,0,m[4][1]]],
 						type: "bar",
-						groups: [[m[0][0],m[1][0],m[2][0],m[3][0],m[4][0]]], //fallo automaticamente seguyendo l'ordine di chi ha più traffico?
-						color: function(d){return "steelblue"},
+						groups: [[m[0][0],m[1][0],m[2][0],m[3][0],m[4][0]]],
+						color: function(d){return "steelblue"}, //#steelblue
 					  },
 					  legend:{
 						show: false,  
@@ -627,32 +624,32 @@ function vehicleForce(data,name){
 			order.push(gates[i]); 
 
 		}
-		console.log(gates,matrix);
-		console.log(map1);
-		console.log("p",paths);
+	
 		for(i=0;i<paths.length;i++){
 			for(j=0;j<paths[i].length-1;j++){
 					curr = paths[i][j]
 					next = paths[i][j+1]
-					console.log(map1[curr]);
 					map1[curr] = map1[curr]+1;
-										console.log(map1[curr]);
 					map1[next] = map1[next]+1;
 					matrix[map[curr]][map[next]] = matrix [map[curr]][map[next]]+1;
 			}
-		}	
+		}
+		var maxNode =0;
 		var nodesGeneral = [];
 		for (i=0;i<gates.length;i++){
 				n = gates[i]; 
 				obj = {"label": n,"value": map1[n] }
 				nodesGeneral.push(obj);
+				if(map1[n] > maxNode) {
+					maxNode = map1[n];
+				}
 			}
 		links = [];
 		max = 0;
 		min = 0;
 		for(i=0;i<matrix.length;i++){
 			for(j=0;j<matrix[i].length;j++){
-					if(matrix[i][j] != 0 && order[i] != order[j]){ //togli le reads una uguale all'altra, farebbero i loop sul nodo
+					if(matrix[i][j] != 0 && order[i] != order[j]){ 
 					el = {"source":order[i], "target":order[j], "value": matrix[i][j],"strength":0.7}
 					links.push(el);
 					if(el.value > max){
@@ -678,12 +675,14 @@ function vehicleForce(data,name){
 		var w = document.getElementById("leftContainer").offsetWidth;
 		    w = w;
 			h = h; 
+		d3.select("#leftContainer").append("div").style("margin-top","10px").style("font-size","14px").style("text-align","center").text("Traffic map for selected vehicle");
 		var svg = d3.select("#leftContainer").append("svg")
 					.attr("id", "svg"+name)
 					.attr("width", w)
 					.attr("height", h)
 					.append("g")
 					.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+		
 						
 		var legendRect = 5;
 		var legendSpacing = 2;
@@ -698,10 +697,9 @@ function vehicleForce(data,name){
 				  var width = legendRect;
 				  var offset =  100;
 				  var vert = legendRect - 70
-				  var horz = i * (legendRect + offset -30);
-				//  var vert = i * (legendRect + offset -50) ;
-				//  var horz = -2 * legendRect - 70;
-				  return "translate("+ (horz-30)+","+ (h - 70) +")";
+				  var horz = w/2 - i * (legendRect + offset- 30);
+			
+				  return "translate("+ (horz-30)+","+ (h - 90) +")";
 			  });
 			  
 		legend.append("rect")
@@ -762,13 +760,17 @@ function vehicleForce(data,name){
 			
 		radius = 6;
 		console.log(gates);
+		var rscale = d3.scaleLinear()
+						.domain([0,maxNode])
+					    .range([2,6])
+						
 		var node = svg.append("g")
 						//	.attr("class", "nodes")
 							.selectAll("circle")
 							.data(nodesGeneral)
 							.enter()
 							.append("circle")
-							.attr("r", radius)
+							.attr("r", function(d){return rscale(d.value)})
 							.attr("fill", function(d){if ((d.label).indexOf("ranger") > -1) {
 												return "#a6cee3";   //ranger azzurro 
 											} else if ((d.label).indexOf("general-gate") > -1) {
@@ -1051,7 +1053,7 @@ function bar(name,filter){
 		var ordered;
 		var base = data;
 		var parseTime = d3.timeParse("%Y-%m-%d %H:%M:%S");
-		var format; //lo tieni così per gli anni poi quando vai a vedere i mesi lo modifichi da quello già modificato
+		var format; 
 		if(filter == "Monthly") {
 			format = d3.timeFormat("%m-%y");
 		} else {
@@ -1082,7 +1084,7 @@ function bar(name,filter){
 							.entries(temp)
 							.sort(function(a, b){ return d3.descending(a.values, b.values);});
 				auxBar(ordered,name,filter);
-		} else if (filter == "Monthly"){        // need serious love
+		} else if (filter == "Monthly"){        
 				 ordered = d3.nest()
 							.key(function(d){return d['car-type'];})
 							.key(function(d) {return d['Timestamp'];})
@@ -1202,8 +1204,7 @@ function auxBar(data,name,filter){
 				obj = {"key":data[j].key,"percent":data[j].values.length};
 				arr.push(obj);
 			}
-			//console.log(data);
-			//pieroni(arr,"aux1","% of traffic per \n vehicle type");
+		
 			radar = radaroni(data,"aux1");
 			var div = d3.select("#container").append("div").attr("id",name).attr("class","mainClass");
 			document.getElementById(name).style.float="left";
@@ -1292,7 +1293,7 @@ function auxBar(data,name,filter){
 					.append("rect")
 					.attr("height", y.bandwidth())
 					.attr("y", function(d,i){return y(d.key)})
-					.attr("fill","steelblue") // cambiare sto colore o no?
+					.attr("fill","steelblue") //"steelblue" 
 					.on("mouseover", function(d,i){
 								canvas.append("text")
 									 .attr('id','t1')
@@ -1308,7 +1309,7 @@ function auxBar(data,name,filter){
 					.on("mouseout", function(d,i){
 									canvas.select("#t1")
 										.remove();
-									d3.select("#"+name).selectAll("rect").attr("fill","steelblue");
+									d3.select("#"+name).selectAll("rect").attr("fill","steelblue"); //steelblue
 									radar.focus(d.key);
 									radar.focus(lastFocused);
 					})
@@ -1393,7 +1394,8 @@ function radaroni(data,name){
 					  text:{show:false,},
 					}
 				  },
-				  legend:{item:{onclick: function(d){},},
+				  legend:{item:{onclick: function(d){},
+								onover: function(d){}},
 				  },
 				  bindto: "#svg"+name,
 				});
@@ -1432,7 +1434,7 @@ function gateBar(key,filter){
 					.filter(function(d) {return d.key == key;});
 				f = filtered[0].values;
 			}
-			else if (filter=="General") { 				// total = nested data, metti un nest per tutti e applica i filtri
+			else if (filter=="General") { 			
 				filtered = d3.nest()
 					.key(function(d){return d['car-type'];})
 					.key(function(d){return d['gate-name'];})
@@ -1575,6 +1577,9 @@ function multiLine(data,name,filter) {
 			document.getElementById(name).style.float="left";
 			var h = document.getElementById(name).clientHeight - 40;
 			var w = document.getElementById(name).clientWidth - margin.right - 20;
+			var tool = d3.select("body").append("div")	
+						.attr("class", "tooltip")				
+						.style("opacity", 0);
 			var cols = [];
 			var months = [];
 			var rows= data.length;
@@ -1639,6 +1644,7 @@ function multiLine(data,name,filter) {
 					line6.push(+data[6].values[j].value);
 				}			
 			months.unshift("x");
+			showMap = {"1":true,"2":true,"3":true,"4":true,"5":true,"6":true,"2P":true}
 			var s = d3.select('#'+name)
 						.append('select')
 						.attr("id","s")
@@ -1661,6 +1667,10 @@ function multiLine(data,name,filter) {
 					.append('option')
 					.text(function (d) { return d})	
 					.property("selected", function(d){return d == filter});
+		
+			var circle = d3.select("svg"+name).selectAll("circle")
+							.on("mouseover",function(){console.log("ciao")});
+			
 			var chart = bb.generate({
 				  data: {
 					x: "x",
@@ -1674,7 +1684,7 @@ function multiLine(data,name,filter) {
 								d3.csv("Lekagul Sensor Data.csv").then(function(data){
 								m = ["May 2015","June","July","August","September","October","November","December","January","February","March","April","May 2016"]
 								dat = filterData(data, m[d.index]);
-								c = g.data() //prende i dati dell'altro, funziona, puoi modificare le cose così
+								c = g.data()
 								  var parseTime = d3.timeParse("%Y-%m-%d");
 									var format = d3.timeFormat("%a");
 									dat.forEach(function(d,i) {   
@@ -1745,16 +1755,29 @@ function multiLine(data,name,filter) {
 										}
 									}
 									week = gateWeek(temp,arr,m[d.index],"aux2");
-									//console.log(temp);
 									setTimeout(function() {g.unload();	d3.select("#Month").text("Readings per day of the week (" + m[d.index] + ")");},1000);	
 									setTimeout(function() {g.load({columns:matrix});clicked = false;},1500)
 										})								
 									}
-				  }
+					},
+					onover: function(d){
+										tool.transition()		
+											.duration(200)		
+											.style("opacity", .9)
+											.style("left", (d3.event.pageX) + "px")		
+											.style("top", (d3.event.pageY - 28) + "px")	
+										if(showMap[d.id]){
+										tool.append("div").attr("id","t1").append("text").text("type " + d.id + ": " + d.value);
+										}
+					},
+					onout: function(d){tool.transition()		
+										.duration(500)		
+										.style("opacity", 0);
+										d3.selectAll("#t1").remove();}, 
 				  },
 				  tooltip: {
 						show: true,
-						 grouped: false,
+						 grouped: true,
 					 },
 				axis: {
 					x: {
@@ -1772,7 +1795,12 @@ function multiLine(data,name,filter) {
 						 position: "top-center"
 					 },
 					legend: {
-						item: {onclick: function (d) {chart.toggle(d);g.toggle(d); 
+						item: {onclick: function (d) { if(showMap[d]){
+															showMap[d] = false;
+														} else {
+															showMap[d] = true;
+														}
+														chart.toggle(d);g.toggle(d); 
 														if(lineLegendShow[d]){ 
 															week = removeType(d,week,temp)
 															lineLegendShow[d] = false;
@@ -1820,7 +1848,7 @@ function multiLine(data,name,filter) {
 			}
 			matrix.push(arr);
 		}
-		g = weekDays(matrix,data,"aux1","General");
+		g = weekDays(matrix,data,"aux1","General",showMap);
 	 })
   }	
 var lineLegendShow = {"1":true,"2":true,"3":true,"4":true,"5":true,"6":true,"2P":true}// usato per tenere conto di quali tipi di macchine sono mostrati o meno
@@ -1863,7 +1891,7 @@ function filterData(data,month){
 		return data;
 }
   
-function weekDays(data,raw,name,filter) {
+function weekDays(data,raw,name,filter,showMap) {
 	var div = d3.select("#container").append("div").attr("id",name).attr("class","aux1");
 			document.getElementById(name).style.width="42%";
 			document.getElementById(name).style.height="59%";
@@ -1872,7 +1900,9 @@ function weekDays(data,raw,name,filter) {
 	var w = document.getElementById(name).offsetWidth;
 	    w = w - margin.right ;
 		h = h + margin.top - 10 - margin.bottom;		
-    
+    			var tool = d3.select("body").append("div")	
+						.attr("class", "tooltip")				
+						.style("opacity", 0);
 	d3.select("#"+name).append("div")
 					.style("text-align", "center")
 					.style("vertical-align", "middle")
@@ -1889,20 +1919,28 @@ function weekDays(data,raw,name,filter) {
 			.style("float","left")
 			.append("g")
 			.attr("transform", "translate(" + w / 2 + "," + h/2 + ")");
-  //capisci bene come è da organizzare i dati per rappresnetare nella chart i giorni della settimana con sopra "stacked type of vehicle"
-	  //se uno clicca da una parte o dall'altra, viene tutto nascosto in entrambi i grafici.
-	//console.log(data);
-
 	var chart = bb.generate({
   data: {
 	columns: data,
-    //type: "bar",
 	groups: [
-	//	["4","2P","1","2","3","4","5","6"] //non so se è meglio così (stacked) o uno affianco all'altro
-	]
-  },
-  tooltip: {
-	  show: false,
+	],
+    onover:function(d){
+						tool.transition()		
+							.duration(200)		
+							.style("opacity", .9)
+							.style("left", (d3.event.pageX) + "px")		
+							.style("top", (d3.event.pageY - 28) + "px")	
+						if(showMap[d.id]){
+							tool.append("div").attr("id","t1").append("text").text("type " + d.id + ": " + d.value);
+						}
+					},
+	onout: function(d){tool.transition()		
+							.duration(500)		
+							.style("opacity", 0);
+						d3.selectAll("#t1").remove();}, 
+		},
+	point: {onover: function(){alert("ciao");}},
+  tooltip: {     
   },
     axis: {
 		x: {
@@ -1956,9 +1994,9 @@ function gateWeek(data,arr,month,name){
 					  data: {
 						columns: [[arr[0][0],arr[0][1],0,0,0,0],[arr[1][0],0,arr[1][1],0,0,0],[arr[2][0],0,0,arr[2][1],0,0],[arr[3][0],0,0,0,arr[3][1],0],[arr[4][0],0,0,0,0,arr[4][1]]],
 						type: "bar",
-						groups: [[arr[0][0],arr[1][0],arr[2][0],arr[3][0],arr[4][0]]], //fallo automaticamente seguyendo l'ordine di chi ha più traffico?
+						groups: [[arr[0][0],arr[1][0],arr[2][0],arr[3][0],arr[4][0]]], 
 						color: function(color,d){
-								return "steelblue";
+								return "steelblue";//steelblue
 								},
 					  },
 					  legend:{
@@ -2040,7 +2078,7 @@ function removeType(type,graph,data,month){
 		}		
 	}
 	//console.log("d",d);
-	//console.log("valori da caricare dopo aver tolto",r,ga,e,c,ge); //occhio che forse lo chiama quando non deve
+	//console.log("valori da caricare dopo aver tolto",r,ga,e,c,ge); 
 	//arr = [["ranger-stops",r,0,0,0,0],["general-gates",0,ge,0,0,0],["entrances",0,0,e,0,0],["gates",0,0,0,ga,0],["campings",0,0,0,0,c]]
 	arr = [["ranger-stops",r],["general-gates",ge],["entrances",e],["gates",ga],["campings",c]]
 	arr.sort(sortFunction);
@@ -2169,7 +2207,7 @@ function addType(type,graph,data){
 					  data: {
 						columns: [[arr[0][0],arr[0][1],0,0,0,0],[arr[1][0],0,arr[1][1],0,0,0],[arr[2][0],0,0,arr[2][1],0,0],[arr[3][0],0,0,0,arr[3][1],0],[arr[4][0],0,0,0,0,arr[4][1]]],
 						type: "bar",
-						groups: [[arr[0][0],arr[1][0],arr[2][0],arr[3][0],arr[4][0]]], //fallo automaticamente seguyendo l'ordine di chi ha più traffico?
+						groups: [[arr[0][0],arr[1][0],arr[2][0],arr[3][0],arr[4][0]]], 
 						color: function(color,d){
 								return "steelblue";
 								},
@@ -2358,7 +2396,7 @@ function timeroni(name,filter){
 								.style("right","20px")
 								.attr("class","filterButton")
 								.attr("id","showForce")
-								.style("background-color","#38B6FF")
+								.style("background-color","#38B6FF") //#38B6FF
 								.style("border","none")
 								.style("margin-top","20px")
 								.style("margin-left","20px")
@@ -2469,10 +2507,14 @@ function force(name,domain,filter) {
 						})
 						.entries(base)			
 			var nodesGeneral = [];
+			var maxNode = 0;
 			for (i=0;i<general.length;i++){
 				n = general[i].key 
 				obj = {"label": n, "value": general[i].values.length}
 				nodesGeneral.push(obj);
+				if(general[i].values.length > maxNode) {
+					maxNode = general[i].values.length;
+				}
 			}
 			nodesGeneral = nodesGeneral.sort(function(a,b){return d3.ascending(a.label,b.label)})
 			var paths = [];
@@ -2510,7 +2552,7 @@ function force(name,domain,filter) {
 			min = 0;
 			for(i=0;i<matrix.length;i++){
 				for(j=0;j<matrix[i].length;j++){
-						if(matrix[i][j] != 0 && order[i] != order[j]){ //togli le reads una uguale all'altra, farebbero i loop sul nodo
+						if(matrix[i][j] != 0 && order[i] != order[j]){
 						el = {"source":order[i], "target":order[j], "value": matrix[i][j],"strength":0.7}
 						links.push(el);
 						if(el.value > max){
@@ -2586,7 +2628,7 @@ function force(name,domain,filter) {
 						.force("center_force", d3.forceCenter(w / 3, h / 3));
 			
 			var color = d3.scaleLinear()
-						.domain([min,max])      // usa questo per cambiare i colori alle linee
+						.domain([min,max])     
 						.range(["lightgray","red"]);
 			console.log(links);
 			for(i=0;i<links.length;i++){
@@ -2623,14 +2665,16 @@ function force(name,domain,filter) {
 
 			
 			radius = 5;
-			
+			var rscale = d3.scaleLinear()
+							  .domain([0,maxNode])
+							  .range([3,8])
 			var node = svg.append("g")
 						//	.attr("class", "nodes")
 							.selectAll("circle")
 							.data(nodesGeneral)
 							.enter()
 							.append("circle")
-							.attr("r", radius)
+							.attr("r", function (d) {return rscale(d.value)})
 							.attr("fill", function(d){if ((d.label).indexOf("ranger") > -1) {
 												return "#a6cee3";   //ranger azzurro 
 											} else if ((d.label).indexOf("general-gate") > -1) {
@@ -2861,7 +2905,7 @@ function showInfo(name,data,filter){
 						[arr[4][0],0,0,0,0,arr[4][1],0,0],[arr[5][0],0,0,0,0,0,arr[5][1],0],[arr[6][0],0,0,0,0,0,0,arr[6][1]]],
 						type: "bar",
 						groups: [[arr[0][0],arr[1][0],arr[2][0],arr[3][0],arr[4][0],arr[5][0],arr[6][0]]], //fallo automaticamente seguyendo l'ordine di chi ha più traffico?
-					  color:function(d) {return "steelblue";},			
+					  color:function(d) {return "steelblue";}, //steelblue			
 
 						},
 					  legend:{
