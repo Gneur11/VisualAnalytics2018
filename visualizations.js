@@ -517,7 +517,7 @@ function vehicleInfo(data){
 	//    wl = wl + 20 - margin.right - margin.left;
 	//	hl = hl + margin.top - margin.bottom - 140;
 	var center = d3.select("#container").append("div").attr("id","centerContainer").attr("class","mainClass");
-		document.getElementById("centerContainer").style.width="34.5%";
+		document.getElementById("centerContainer").style.width="34%";
 		document.getElementById("centerContainer").style.float="left";
 		document.getElementById("centerContainer").style.height="44%";	
 		m = [["ranger-stops",0],["entrances",0],["campings",0],["gate",0],["general-gates",0]]
@@ -638,10 +638,12 @@ function vehicleForce(data,name){
 		var nodesGeneral = [];
 		for (i=0;i<gates.length;i++){
 				n = gates[i]; 
-				obj = {"label": n,"value": map1[n] }
-				nodesGeneral.push(obj);
-				if(map1[n] > maxNode) {
-					maxNode = map1[n];
+				if(map1[n] != 0){
+					obj = {"label": n,"value": map1[n]}
+					nodesGeneral.push(obj);
+					if(map1[n] > maxNode) {
+						maxNode = map1[n];
+					}
 				}
 			}
 		links = [];
@@ -699,7 +701,7 @@ function vehicleForce(data,name){
 				  var vert = legendRect - 70
 				  var horz = w/2 - i * (legendRect + offset- 30);
 			
-				  return "translate("+ (horz-30)+","+ (h - 90) +")";
+				  return "translate("+ (w/2.5 - horz)+","+ (h - 90) +")";
 			  });
 			  
 		legend.append("rect")
@@ -721,9 +723,9 @@ function vehicleForce(data,name){
 			simulation.force("charge_force", d3.forceManyBody())
 						.force("center_force", d3.forceCenter(w / 4, h / 3));
 			
-			var color = d3.scaleLinear()
+			var op = d3.scaleLinear()
 						.domain([min,max])      // usa questo per cambiare i colori alle linee
-						.range(["lightgray","red"]);
+						.range([0.7,1]);
 			//console.log(links);
 			for(i=0;i<links.length;i++){
 				for(j=i;j<links.length;j++){
@@ -739,7 +741,8 @@ function vehicleForce(data,name){
 							.data(links)
 							.enter()
 							.append("line")
-							.style("stroke",function(d){return color(d.value)})
+							.style("stroke","red")
+							.style("opacity",function(d){return op(d.value)})
 							.attr("stroke-width", 2)
 							.style("z-index",-1)
 							.on("mouseover", function(d) {		
@@ -810,7 +813,7 @@ function vehicleForce(data,name){
 		function tickActions() {
 				//update circle positions to reflect node updates on each tick of the simulation 
 				node.attr("cx", function(d) { return d.x = Math.max(radius, Math.min(w/1.2 - radius, d.x)); })
-					.attr("cy", function(d) { return d.y = Math.max(radius, Math.min(h/1.5 -radius, d.y)); });
+					.attr("cy", function(d) { return d.y = Math.max(radius, Math.min(h/1.6 -radius, d.y)); });
 
 					
 				 svgLinks.attr("x1", function(d){return d.source.x; })
@@ -2627,9 +2630,9 @@ function force(name,domain,filter) {
 			simulation.force("charge_force", d3.forceManyBody())
 						.force("center_force", d3.forceCenter(w / 3, h / 3));
 			
-			var color = d3.scaleLinear()
-						.domain([min,max])     
-						.range(["lightgray","red"]);
+			var op = d3.scaleLinear()
+						.domain([min,max])      // usa questo per cambiare i colori alle linee
+						.range([0.35,1]);
 			console.log(links);
 			for(i=0;i<links.length;i++){
 				for(j=i;j<links.length;j++){
@@ -2645,7 +2648,8 @@ function force(name,domain,filter) {
 							.data(links)
 							.enter()
 							.append("line")
-							.style("stroke",function(d){return color(d.value)})
+							.style("stroke","red")
+							.style("opacity",function(d){return op(d.value)})
 							.attr("stroke-width", 2)
 							.style("z-index",-1)
 							.on("mouseover", function(d) {		
